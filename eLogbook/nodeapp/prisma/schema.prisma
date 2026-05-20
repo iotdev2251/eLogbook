@@ -1,0 +1,64 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+
+model gateway {
+  id           String   @id @default(cuid())
+  created_at   DateTime @default(now())
+  updated_at   DateTime @updatedAt
+  name         String   @db.VarChar(255)
+  mac_addr     String   @db.VarChar(255)
+  check_point  Boolean  @default(false)
+  data         beacon[]
+}
+
+model beacon {
+  id          String   @id @default(cuid())
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+  mac_addr    String   @db.VarChar(255) @unique
+  name        String?   @db.VarChar(255)
+  nickname    String?   @db.VarChar(255)
+  report_at   DateTime @default(now())
+  gateway_id  String
+  gateway     gateway  @relation(fields: [gateway_id], references: id)
+  temp        Int
+  battery     Int
+  rssi        Int
+  status      String   @db.VarChar(5)
+}
+
+model beacon_history {
+  id          Int      @id @default(autoincrement())
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+  beacon_mac_addr    String   @db.VarChar(255)
+  name        String?   @db.VarChar(255)
+  nickname    String?   @db.VarChar(255)
+  report_at   DateTime @default(now())
+  gateway_mac_addr  String
+  gateway_name  String
+  temp        Int
+  battery     Int
+  rssi        Int
+  status      String   @db.VarChar(5)
+
+  @@index([beacon_mac_addr])
+}
+
+model param {
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+  key         String   @id @db.VarChar(100)
+  value       String   @db.VarChar(5000)
+  desc        String   @db.VarChar(5000)
+}

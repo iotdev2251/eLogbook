@@ -1,0 +1,62 @@
+version: "3.8"
+
+volumes:
+    postgres-db-data:
+
+services:
+    postgresql-db:
+      image: postgres
+      volumes:
+          - postgres-db-data:/var/lib/postgresql
+      ports:
+        - ${POSTGRES_PORT}:${POSTGRES_DOCKER_PORT}
+      environment:
+        - POSTGRES_DB=${POSTGRES_DB}
+        - POSTGRES_USER=${POSTGRES_USER}
+        - POSTGRES_PASSWORD=${POSTGRES_PASS}
+        - ALLOW_IP_RANGE=${ALLOW_IP_RANGE}
+        - FORCE_SSL=FALSE
+        - TZ=Asia/Hong_Kong
+      restart: on-failure
+      healthcheck:
+        test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+        interval: 10s
+        timeout: 5s
+        retries: 5
+
+    mqtt-broker:
+      image: eclipse-mosquitto
+      volumes:
+        - ./mosquitto:/mosquitto
+        - ./mosquitto/data:/mosquitto/data
+        - ./mosquitto/log:/mosquitto/log
+      ports:
+        - ${MQTT_PORT}:${MQTT_DOCKER_PORT}
+
+    app:
+      build:
+        context: .
+        dockerfile: nodeapp/Dockerfile
+      env_file: ./.env
+      environment:
+        - TZ=Asia/Hong_Kong
+      command: >
+        sh -c "
+          cd /frontend && npm install && npm run build &&
+          cd /app && npm install &&
+          npx prisma migrate deploy &&
+          npm run prod
+        "
+      ports:
+        - ${NODE_PORT}:${NODE_DOCKER_PORT}
+      working_dir: /app
+      volumes:
+        - ./nodeapp:/app
+        - ./nodeapp/node_modules:/app/node_modules
+        - ./frontend:/frontend
+        - /frontend/node_modules
+      depends_on: 
+        postgresql-db:
+          condition: service_healthy
+      stdin_open: true
+      tty: true

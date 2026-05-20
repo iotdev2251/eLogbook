@@ -1,0 +1,95 @@
+import { loggerFactory } from '../../config/logger.js';
+import pkg from '@prisma/client'
+
+const prisma = new pkg.PrismaClient()
+
+const logger = loggerFactory("beaconDataStore")
+
+class BeaconDataStore {
+    async updateBeacon(beacon){
+        try {
+            const result = await prisma.beacon.upsert({
+                where: { mac_addr: beacon.mac_addr },
+                update: {
+                    name: beacon.name,
+                    temp: beacon.temp,
+                    battery: beacon.battery,
+                    rssi: beacon.rssi,
+                    status: beacon.status,
+                    report_at: beacon.report_at,
+                    gateway_id: beacon.gateway_id,
+                },
+                create: {
+                    name: beacon.name,
+                    nickname: beacon.nickname,
+                    mac_addr: beacon.mac_addr,
+                    temp: beacon.temp,
+                    battery: beacon.battery,
+                    rssi: beacon.rssi,
+                    status: beacon.status,
+                    report_at: beacon.report_at,
+                    gateway: {
+                        connect: {
+                            id: beacon.gateway.id
+                        }
+                    }
+                }
+            })
+            return result
+        }
+        catch (e) {
+            logger.error(e)
+            return {
+                "msg": "Error in updating beacon data",
+                "error": e
+            }
+        }
+    }
+
+    async insertHistory(histories) {
+        try {
+            const result = await prisma.beacon_history.createMany({
+                data: histories
+            })
+            return result
+        }
+        catch (e) {
+            logger.error(e)
+            return {
+                "msg": "Error in updating beacon data",
+                "error": e
+            }
+        }
+    }
+
+    async getAllBeacons(){
+        try{
+            const result = await prisma.beacon.findMany({
+                orderBy: { mac_addr: 'asc' },
+                include: {
+                    gateway: true
+                }
+            })
+            return result
+        }
+        catch(e){
+            logger.error(e)
+            throw e
+            return []
+        }
+    }
+
+    async getAllGateways() {
+        try {
+            const result = await prisma.gateway.findMany()
+            return result
+        }
+        catch (e) {
+            logger.error(e)
+            throw e
+            return []
+        }
+    }
+}
+
+export { BeaconDataStore }

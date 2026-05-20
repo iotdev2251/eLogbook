@@ -1,0 +1,103 @@
+import pkg from '@prisma/client'
+
+const prisma = new pkg.PrismaClient()
+
+async function main() {
+  const gateway1 = await prisma.gateway.upsert({
+    where: { id: 'Check Point Gateway' },
+    update: {},
+    create: {
+      id: 'Check Point Gateway',
+      name: "Check Point Gateway",
+      mac_addr: "C9CB4ACAE270",
+      check_point: true
+    },
+  })
+  const gateway2 = await prisma.gateway.upsert({
+    where: { id: 'Gateway 02' },
+    update: {},
+    create: {
+      id: 'Gateway 02',
+      name: "Gateway 02",
+      mac_addr: "EF0F38A6BF03",
+      check_point: false
+    },
+  })
+
+  console.log({ gateway1, gateway2 })
+  newBeacon()
+  param()
+}
+
+async function newBeacon() {
+  const b1 = await prisma.beacon.upsert({
+    where: { id: 'B1' },
+    update: {},
+    create: {
+      id: 'B1',
+      name: "Beacon 1",
+      nickname: "Beacon 1",
+      mac_addr: "80ECCACD5623",
+      gateway_id: 'G1',
+      temp: 242,
+      battery: 0,
+      rssi: 0,
+      status: 'in'
+    }
+  })
+  const b2 = await prisma.beacon.upsert({
+    where: { id: 'B2' },
+    update: {},
+    create: {
+      id: 'B2',
+      name: "Beacon 2",
+      nickname: "Beacon 2",
+      mac_addr: "80ECCACD5625",
+      gateway_id: 'G1',
+      temp: 242,
+      battery: 0,
+      rssi: 0,
+      status: 'in'
+    }
+  })
+  console.log({b1, b2})
+}
+
+async function param() {
+  await prisma.param.upsert({
+    where: { key: 'BEACON_OUT_TIME' },
+    update: {},
+    create: {
+      key: 'BEACON_OUT_TIME',
+      value: '30',
+      desc: 'Time to consider the beacon to be `OUT` or `ALERT`.  In seconds.'
+    }
+  })
+  await prisma.param.upsert({
+    where: { key: 'HISTORY_DELETE_EXPIRED_HOUR' },
+    update: {},
+    create: {
+      key: 'HISTORY_DELETE_EXPIRED_HOUR',
+      value: '36',
+      desc: 'Time to delete the beacon history.  In hours.'
+    }
+  })
+  await prisma.param.upsert({
+    where: { key: 'NEW_BEACON_PREFIX' },
+    update: {},
+    create: {
+      key: 'NEW_BEACON_PREFIX',
+      value: '80ECCC,80ECCB,80ECCA',
+      desc: 'New Beacon Mac Address Prefix to be automatically accepted by system. Comma separated (,).'
+    }
+  })
+}
+
+main()
+  .catch((e) => {
+    console.error(e)
+    process.exit(1)
+  })
+  .finally(async () => {
+    await prisma.$disconnect()
+  })

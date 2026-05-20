@@ -1,0 +1,63 @@
+{
+  "name": "e-logbook",
+  "version": "0.0.0",
+  "description": "e-LogBook",
+  "private": true,
+  "scripts": {
+    "start": "node ./bin/www.js",
+    "dev": "nodemon ./bin/www.js",
+    "prodDebug": "pm2-runtime pm2_process.yml --env development",
+    "prod": "pm2-runtime pm2_process.yml --env production",
+    "gui:build": "cd ../frontend && npm run build",
+    "gui:clean": "rm -rf public/*",
+    "test": "node --experimental-vm-modules node_modules/.bin/jest",
+    "test:dev": "node --experimental-vm-modules node_modules/.bin/jest --watch --silent --runInBand",
+    "test:dev:verbose": "node --experimental-vm-modules node_modules/.bin/jest --watch --verbose"
+  },
+  "nodemonConfig": {
+    "ignore": [
+      "test/*",
+      "docs/*",
+      "**/logs/**"
+    ],
+    "delay": 2500
+  },
+  "type": "module",
+  "author": "",
+  "dependencies": {
+    "@prisma/client": "^3.11.1",
+    "cookie-parser": "~1.4.4",
+    "debug": "~2.6.9",
+    "dotenv": "^10.0.0",
+    "ejs": "^3.1.6",
+    "express": "^4.17.1",
+    "express-pino-logger": "^7.0.0",
+    "file-stream-rotator": "^0.6.1",
+    "got": "^11.8.3",
+    "got-xml": "^1.0.0",
+    "helmet": "^4.6.0",
+    "mqtt": "^4.3.6",
+    "pg": "^8.7.1",
+    "pino": "^7.5.1",
+    "pino-multi-stream": "^6.0.0",
+    "pino-pretty": "^7.2.0",
+    "prisma": "^3.11.1",
+    "socket.io": "^4.4.0",
+    "tough-cookie": "^4.0.0"
+  },
+  "devDependencies": {
+    "@types/cookie-parser": "^1.4.2",
+    "@types/debug": "^4.1.7",
+    "@types/express": "^4.17.13",
+    "@types/express-pino-logger": "^4.0.3",
+    "axios": "^0.24.0",
+    "jest": "^27.4.5",
+    "nock": "^13.2.1",
+    "nodemon": "^2.0.15",
+    "sinon": "^12.0.1",
+    "socket.io-client": "^4.4.0"
+  },
+  "prisma": {
+    "seed": "node prisma/seed.js"
+  }
+}
