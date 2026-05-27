@@ -14,7 +14,11 @@ __MACOSX/
 
 # Duplicate folder at repo root only (Windows is case-insensitive)
 /Nodeapp/
+Nodeapp_local_backup/
 
 # Editor
 .vscode/
 .idea/
+
+# Local notes and archives
+TempTrack_*.md
