@@ -1,0 +1,20 @@
+# Environment and secrets
+.env
+**/.env
+
+# Dependencies
+node_modules/
+**/node_modules/
+
+# macOS / archive junk
+__MACOSX/
+.DS_Store
+**/.DS_Store
+*.zip
+
+# Duplicate folder at repo root only (Windows is case-insensitive)
+/Nodeapp/
+
+# Editor
+.vscode/
+.idea/

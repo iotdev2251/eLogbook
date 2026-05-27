@@ -1,5 +1,5 @@
 import React from 'react';
-import { Thermometer, Battery, Signal, Clock, AlertTriangle } from 'lucide-react';
+import { Thermometer, Battery, Signal, Clock, AlertTriangle, Router } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
@@ -29,64 +29,90 @@ export const BeaconCard = ({ beacon }) => {
         </div>
       )}
 
-      <div className="flex justify-between items-start">
-        <div>
-          <h3 className="text-xl font-bold truncate max-w-[200px]">
+      <div className="flex flex-row items-center justify-between gap-6 w-full">
+        {/* Name & MAC */}
+        <div className="flex flex-col min-w-[200px]">
+          <h3 className="text-xl font-bold truncate">
             {beacon.nickname || beacon.name || 'Unknown Beacon'}
           </h3>
           <p className="text-xs text-gray-500 font-mono">{beacon.mac_addr}</p>
         </div>
+
+        {/* Status */}
         <div className={cn(
-          "px-2 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider",
+          "px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider text-center whitespace-nowrap",
           isOnline ? "bg-green-500/20 text-green-400" : "bg-gray-500/20 text-gray-400"
         )}>
           {beacon.status}
         </div>
-      </div>
 
-      <div className="grid grid-cols-2 gap-4">
-        <div className="flex items-center gap-2">
-          <div className="p-2 rounded-lg bg-blue-500/10 text-blue-400">
-            <Thermometer size={16} />
+        {/* Sensor Data Row */}
+        <div className="flex flex-row items-center gap-8 flex-1 justify-end">
+          {/* Gateway */}
+          <div className="flex items-center gap-2 min-w-[140px]">
+            <div className="p-2 rounded-lg bg-cyan-500/10 text-cyan-400">
+              <Router size={16} />
+            </div>
+            <div>
+              <p className="text-[10px] text-gray-500 uppercase">Gateway</p>
+              <p className="font-bold text-xs truncate max-w-[120px]" title={beacon.gateway_name || beacon.gateway_id || ''}>
+                {beacon.gateway_name || beacon.gateway_id || '—'}
+              </p>
+              {beacon.gateway_mac_addr && (
+                <p className="text-[10px] text-gray-500 font-mono truncate max-w-[120px]">
+                  {beacon.gateway_mac_addr}
+                </p>
+              )}
+            </div>
           </div>
-          <div>
-            <p className="text-[10px] text-gray-500 uppercase">Temp</p>
-            <p className="font-bold">{beacon.temp}°C</p>
-          </div>
-        </div>
 
-        <div className="flex items-center gap-2">
-          <div className={cn(
-            "p-2 rounded-lg text-green-400",
-            beacon.battery < 20 ? "bg-red-500/10 text-red-400" : "bg-green-500/10"
-          )}>
-            <Battery size={16} />
+          {/* Temp */}
+          <div className="flex items-center gap-2">
+            <div className="p-2 rounded-lg bg-blue-500/10 text-blue-400">
+              <Thermometer size={16} />
+            </div>
+            <div>
+              <p className="text-[10px] text-gray-500 uppercase">Temp</p>
+              <p className="font-bold">{beacon.temp}°C</p>
+            </div>
           </div>
-          <div>
-            <p className="text-[10px] text-gray-500 uppercase">Battery</p>
-            <p className="font-bold">{beacon.battery}%</p>
-          </div>
-        </div>
 
-        <div className="flex items-center gap-2">
-          <div className="p-2 rounded-lg bg-purple-500/10 text-purple-400">
-            <Signal size={16} />
+          {/* Battery */}
+          <div className="flex items-center gap-2">
+            <div className={cn(
+              "p-2 rounded-lg text-green-400",
+              beacon.battery < 20 ? "bg-red-500/10 text-red-400" : "bg-green-500/10"
+            )}>
+              <Battery size={16} />
+            </div>
+            <div>
+              <p className="text-[10px] text-gray-500 uppercase">Battery</p>
+              <p className="font-bold">{beacon.battery}%</p>
+            </div>
           </div>
-          <div>
-            <p className="text-[10px] text-gray-500 uppercase">RSSI</p>
-            <p className="font-bold">{beacon.rssi} dBm</p>
-          </div>
-        </div>
 
-        <div className="flex items-center gap-2">
-          <div className="p-2 rounded-lg bg-orange-500/10 text-orange-400">
-            <Clock size={16} />
+          {/* RSSI */}
+          <div className="flex items-center gap-2">
+            <div className="p-2 rounded-lg bg-purple-500/10 text-purple-400">
+              <Signal size={16} />
+            </div>
+            <div>
+              <p className="text-[10px] text-gray-500 uppercase">RSSI</p>
+              <p className="font-bold">{beacon.rssi} dBm</p>
+            </div>
           </div>
-          <div>
-            <p className="text-[10px] text-gray-500 uppercase">Last seen</p>
-            <p className="font-bold text-[10px]">
-              {new Date(beacon.report_at).toLocaleTimeString()}
-            </p>
+
+          {/* Last seen */}
+          <div className="flex items-center gap-2 min-w-[120px]">
+            <div className="p-2 rounded-lg bg-orange-500/10 text-orange-400">
+              <Clock size={16} />
+            </div>
+            <div>
+              <p className="text-[10px] text-gray-500 uppercase">Last seen</p>
+              <p className="font-bold text-xs">
+                {new Date(beacon.report_at).toLocaleTimeString()}
+              </p>
+            </div>
           </div>
         </div>
       </div>

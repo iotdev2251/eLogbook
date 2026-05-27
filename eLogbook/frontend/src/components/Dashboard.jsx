@@ -83,7 +83,7 @@ export const Dashboard = () => {
           </div>
         </div>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 gap-4">
           <AnimatePresence mode="popLayout">
             {beaconList.sort((a,b) => new Date(b.report_at) - new Date(a.report_at)).map(beacon => (
               <BeaconCard key={beacon.mac_addr} beacon={beacon} />

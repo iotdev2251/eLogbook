@@ -62,3 +62,12 @@ model param {
   value       String   @db.VarChar(5000)
   desc        String   @db.VarChar(5000)
 }
+
+model user {
+  id          String   @id @default(cuid())
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+  username    String   @unique @db.VarChar(50)
+  password    String   @db.VarChar(255)
+  role        String   @db.VarChar(20) @default("viewer")
+}

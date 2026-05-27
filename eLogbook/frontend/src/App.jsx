@@ -1,9 +1,57 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
+import axios from 'axios';
 import { Dashboard } from './components/Dashboard';
-import { Layout, LayoutDashboard, History, Settings, Bell } from 'lucide-react';
+import { Login } from './components/Login';
+import { Settings } from './components/Settings';
+import { LayoutDashboard, History, Settings as SettingsIcon, Bell, LogOut } from 'lucide-react';
 
-function App() {
-  const [activeTab, setActiveTab] = useState('dashboard');
+// Configure axios to send cookies
+axios.defaults.withCredentials = true;
+
+function AppContent() {
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    // Check if user is logged in
+    axios.get('/auth/me')
+      .then(res => {
+        setUser(res.data);
+      })
+      .catch(() => {
+        setUser(null);
+      })
+      .finally(() => {
+        setLoading(false);
+      });
+  }, []);
+
+  const handleLogout = async () => {
+    try {
+      await axios.post('/auth/logout');
+      setUser(null);
+      navigate('/login');
+    } catch (err) {
+      console.error('Logout failed', err);
+    }
+  };
+
+  if (loading) {
+    return <div className="min-h-screen flex items-center justify-center bg-background text-white">Loading...</div>;
+  }
+
+  if (!user && location.pathname !== '/login') {
+    return <Navigate to="/login" replace />;
+  }
+
+  if (location.pathname === '/login') {
+    return user ? <Navigate to="/" replace /> : <Login onLogin={setUser} />;
+  }
+
+  const activeTab = location.pathname.substring(1) || 'dashboard';
 
   return (
     <div className="min-h-screen flex bg-background">
@@ -23,37 +71,43 @@ function App() {
             icon={<LayoutDashboard size={20} />} 
             label="Dashboard" 
             active={activeTab === 'dashboard'} 
-            onClick={() => setActiveTab('dashboard')}
+            onClick={() => navigate('/')}
           />
           <NavItem 
             icon={<History size={20} />} 
             label="History" 
             active={activeTab === 'history'} 
-            onClick={() => setActiveTab('history')}
+            onClick={() => navigate('/history')}
           />
           <NavItem 
             icon={<Bell size={20} />} 
             label="Alerts" 
             active={activeTab === 'alerts'} 
-            onClick={() => setActiveTab('alerts')}
+            onClick={() => navigate('/alerts')}
           />
           <div className="mt-4 pt-4 border-t border-border">
             <NavItem 
-              icon={<Settings size={20} />} 
+              icon={<SettingsIcon size={20} />} 
               label="Settings" 
               active={activeTab === 'settings'} 
-              onClick={() => setActiveTab('settings')}
+              onClick={() => navigate('/settings')}
             />
           </div>
         </div>
 
-        <div className="mt-auto p-4 glass-panel flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-gray-700 overflow-hidden">
-             <img src="https://ui-avatars.com/api/?name=Admin&background=random" alt="Admin" />
-          </div>
-          <div>
-            <p className="text-sm font-bold">Admin User</p>
-            <p className="text-[10px] text-gray-500">System Administrator</p>
+        <div className="mt-auto flex flex-col gap-4">
+          <button onClick={handleLogout} className="flex items-center gap-3 px-4 py-2 text-red-400 hover:bg-red-500/10 rounded-xl transition-all">
+            <LogOut size={18} />
+            <span className="font-medium text-sm">Sign Out</span>
+          </button>
+          <div className="p-4 glass-panel flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-gray-700 overflow-hidden flex-shrink-0">
+               <img src={`https://ui-avatars.com/api/?name=${user.username}&background=random`} alt={user.username} />
+            </div>
+            <div className="overflow-hidden">
+              <p className="text-sm font-bold truncate">{user.username}</p>
+              <p className="text-[10px] text-gray-500 uppercase tracking-widest">{user.role}</p>
+            </div>
           </div>
         </div>
       </nav>
@@ -71,14 +125,29 @@ function App() {
           </div>
         </header>
 
-        {activeTab === 'dashboard' ? <Dashboard /> : (
-          <div className="p-12 text-center text-gray-500">
-            <h2 className="text-2xl font-bold mb-4">{activeTab} View is coming soon</h2>
-            <p>We are currently implementing this feature.</p>
-          </div>
-        )}
+        <Routes>
+          <Route path="/" element={<Dashboard />} />
+          <Route path="/settings" element={<Settings currentUser={user} />} />
+          <Route path="/history" element={<PlaceholderView name="History" />} />
+          <Route path="/alerts" element={<PlaceholderView name="Alerts" />} />
+        </Routes>
       </main>
     </div>
+  );
+}
+
+const PlaceholderView = ({ name }) => (
+  <div className="p-12 text-center text-gray-500">
+    <h2 className="text-2xl font-bold mb-4">{name} View is coming soon</h2>
+    <p>We are currently implementing this feature.</p>
+  </div>
+);
+
+function App() {
+  return (
+    <Router>
+      <AppContent />
+    </Router>
   );
 }
 

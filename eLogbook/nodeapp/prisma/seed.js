@@ -1,15 +1,26 @@
 import pkg from '@prisma/client'
+import bcrypt from 'bcryptjs'
 
 const prisma = new pkg.PrismaClient()
 
 async function main() {
+  const hashedPassword = await bcrypt.hash('admin123', 10)
+  const adminUser = await prisma.user.upsert({
+    where: { username: 'admin' },
+    update: { password: hashedPassword, role: 'admin' },
+    create: {
+      username: 'admin',
+      password: hashedPassword,
+      role: 'admin'
+    }
+  })
   const gateway1 = await prisma.gateway.upsert({
     where: { id: 'Check Point Gateway' },
     update: {},
     create: {
       id: 'Check Point Gateway',
       name: "Check Point Gateway",
-      mac_addr: "C9CB4ACAE270",
+      mac_addr: "EB42F1F2B7B2",
       check_point: true
     },
   })
@@ -37,8 +48,8 @@ async function newBeacon() {
       id: 'B1',
       name: "Beacon 1",
       nickname: "Beacon 1",
-      mac_addr: "80ECCACD5623",
-      gateway_id: 'G1',
+      mac_addr: "80ECCC0008B6",
+      gateway_id: 'Check Point Gateway',
       temp: 242,
       battery: 0,
       rssi: 0,
@@ -52,8 +63,8 @@ async function newBeacon() {
       id: 'B2',
       name: "Beacon 2",
       nickname: "Beacon 2",
-      mac_addr: "80ECCACD5625",
-      gateway_id: 'G1',
+      mac_addr: "80ECCB002111",
+      gateway_id: 'Check Point Gateway',
       temp: 242,
       battery: 0,
       rssi: 0,

@@ -4,6 +4,26 @@ import { c } from '../../config/constant.js'
 
 const MAX_RECORD = c.BEACON_API_PAGE_RECORD
 
+function mapBeaconForClient(beacon) {
+    if (beacon == null) {
+        return null
+    }
+    return {
+        mac_addr: beacon.mac_addr,
+        name: beacon.name,
+        nickname: beacon.nickname,
+        temp: beacon.temp / 10,
+        battery: beacon.battery,
+        rssi: beacon.rssi,
+        status: beacon.status,
+        report_at: beacon.report_at,
+        gateway_id: beacon.gateway_id,
+        gateway_name: beacon.gateway?.name ?? null,
+        gateway_mac_addr: beacon.gateway?.mac_addr ?? null,
+        alert: (beacon.status == BEACON_STATUS.ALERT)
+    }
+}
+
 class BeaconApi{
     constructor(beaconRepository){
         this._beaconRepository = beaconRepository
@@ -20,18 +40,7 @@ class BeaconApi{
             }
             else{
                 const beacon = allBeacons[b]
-                result.push({
-                    mac_addr: beacon.mac_addr,
-                    name: beacon.name,
-                    nickname: beacon.nickname,
-                    temp: beacon.temp / 10,
-                    battery: beacon.battery,
-                    rssi: beacon.rssi,
-                    status: beacon.status,
-                    report_at: beacon.report_at,
-                    gateway_id: beacon.gateway_id,
-                    alert: (beacon.status == BEACON_STATUS.ALERT)
-                })
+                result.push(mapBeaconForClient(beacon))
             }
 
             if(result.length >= MAX_RECORD){
@@ -47,19 +56,8 @@ class BeaconApi{
             return null
         }
         const beacon = this._beaconRepository.getAllBeacons()[mac_addr]
-        return {
-            mac_addr: beacon.mac_addr,
-            name: beacon.name,
-            nickname: beacon.nickname,
-            temp: beacon.temp / 10,
-            battery: beacon.battery,
-            rssi: beacon.rssi,
-            status: beacon.status,
-            report_at: beacon.report_at,
-            gateway_id: beacon.gateway_id,
-            alert: (beacon.status == BEACON_STATUS.ALERT)
-        }
+        return mapBeaconForClient(beacon)
     }
 }
 
-export { BeaconApi }
+export { BeaconApi, mapBeaconForClient }

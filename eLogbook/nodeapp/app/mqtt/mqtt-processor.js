@@ -1,5 +1,6 @@
 import { loggerFactory } from '../../config/logger.js';
 import { BEACON_STATUS } from '../beacon/beacon-status.js'
+import { mapBeaconForClient } from '../beacon/beacon-api.js'
 
 const logger = loggerFactory('mqtt-processor')
 
@@ -71,8 +72,9 @@ class MqttProcessor{
         await this._beaconRepository.writeToDb()
     }
 
-    _notify(beacon) {
-        this._io.emit('ADDED_DATA', beacon);
+    _notify(beacons) {
+        const payload = beacons.map(mapBeaconForClient)
+        this._io.emit('ADDED_DATA', payload);
     }
 
     setBeaconsStatus() {

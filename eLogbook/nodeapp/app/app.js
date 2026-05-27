@@ -42,6 +42,9 @@ function initApp() {
 }
 
 
+import { authRouter } from './auth/auth-router.js';
+import { authMiddleware } from './auth/auth-middleware.js';
+
 class MyApp {
     constructor(){
         this.app = initApp()
@@ -71,8 +74,9 @@ class MyApp {
     }
 
     _initRouter(app) {
-        app.use('/beacons', addBeaconRouter(this._beaconRepository))
-        app.use('/history', addHistoryRouter())
+        app.use('/auth', authRouter)
+        app.use('/beacons', authMiddleware, addBeaconRouter(this._beaconRepository))
+        app.use('/history', authMiddleware, addHistoryRouter())
 
         // Serve the dashboard for any other routes (SPA support)
         app.get('*', (req, res) => {
