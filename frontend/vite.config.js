@@ -15,7 +15,7 @@ export default defineConfig({
     }
   },
   build: {
-    outDir: '../nodeapp/public',
+    outDir: process.env.VITE_BUILD_OUT_DIR || '../nodeapp/public',
     emptyOutDir: true,
   }
 })
