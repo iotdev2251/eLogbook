@@ -62,7 +62,7 @@ function AppContent() {
             <RadioIcon />
           </div>
           <h1 className="text-xl font-bold font-display bg-gradient-to-r from-white to-gray-500 bg-clip-text text-transparent">
-            eLogbook
+            TempTrack
           </h1>
         </div>
 

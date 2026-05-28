@@ -39,7 +39,7 @@ export const Login = ({ onLogin }) => {
             </svg>
           </div>
           <h1 className="text-3xl font-bold font-display bg-gradient-to-r from-white to-gray-400 bg-clip-text text-transparent">
-            eLogbook
+            TempTrack
           </h1>
           <p className="text-gray-500 mt-2 text-sm uppercase tracking-widest">System Login</p>
         </div>

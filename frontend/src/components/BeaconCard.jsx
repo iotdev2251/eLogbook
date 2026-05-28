@@ -11,6 +11,8 @@ function cn(...inputs) {
 export const BeaconCard = ({ beacon }) => {
   const isAlert = beacon.status === 'alert' || beacon.alert;
   const isOnline = beacon.status === 'in';
+  const gatewayText = beacon.gateway_name || beacon.gateway_id || '—';
+  const timeText = beacon.report_at ? new Date(beacon.report_at).toLocaleTimeString() : '—';
 
   return (
     <motion.div
@@ -19,7 +21,7 @@ export const BeaconCard = ({ beacon }) => {
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, scale: 0.95 }}
       className={cn(
-        "glass-panel p-6 flex flex-col gap-4 relative overflow-hidden transition-all duration-300",
+        "glass-panel p-4 relative overflow-x-auto transition-all duration-300",
         isAlert ? "border-red-500/50 bg-red-500/5" : "hover:border-accent-cyan/50"
       )}
     >
@@ -29,92 +31,57 @@ export const BeaconCard = ({ beacon }) => {
         </div>
       )}
 
-      <div className="flex flex-row items-center justify-between gap-6 w-full">
-        {/* Name & MAC */}
-        <div className="flex flex-col min-w-[200px]">
-          <h3 className="text-xl font-bold truncate">
+      <div className="flex items-center gap-6 min-w-[1100px] whitespace-nowrap">
+        <div className="flex flex-col min-w-[210px]">
+          <h3 className="text-base font-bold truncate">
             {beacon.nickname || beacon.name || 'Unknown Beacon'}
           </h3>
-          <p className="text-xs text-gray-500 font-mono">{beacon.mac_addr}</p>
+          <p className="text-xs text-gray-500 font-mono truncate">{beacon.mac_addr}</p>
         </div>
 
-        {/* Status */}
         <div className={cn(
-          "px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider text-center whitespace-nowrap",
+          "px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider text-center",
           isOnline ? "bg-green-500/20 text-green-400" : "bg-gray-500/20 text-gray-400"
         )}>
           {beacon.status}
         </div>
 
-        {/* Sensor Data Row */}
-        <div className="flex flex-row items-center gap-8 flex-1 justify-end">
-          {/* Gateway */}
-          <div className="flex items-center gap-2 min-w-[140px]">
-            <div className="p-2 rounded-lg bg-cyan-500/10 text-cyan-400">
-              <Router size={16} />
-            </div>
-            <div>
-              <p className="text-[10px] text-gray-500 uppercase">Gateway</p>
-              <p className="font-bold text-xs truncate max-w-[120px]" title={beacon.gateway_name || beacon.gateway_id || ''}>
-                {beacon.gateway_name || beacon.gateway_id || '—'}
-              </p>
-              {beacon.gateway_mac_addr && (
-                <p className="text-[10px] text-gray-500 font-mono truncate max-w-[120px]">
-                  {beacon.gateway_mac_addr}
-                </p>
-              )}
-            </div>
-          </div>
-
-          {/* Temp */}
-          <div className="flex items-center gap-2">
-            <div className="p-2 rounded-lg bg-blue-500/10 text-blue-400">
-              <Thermometer size={16} />
-            </div>
-            <div>
-              <p className="text-[10px] text-gray-500 uppercase">Temp</p>
-              <p className="font-bold">{beacon.temp}°C</p>
-            </div>
-          </div>
-
-          {/* Battery */}
-          <div className="flex items-center gap-2">
-            <div className={cn(
-              "p-2 rounded-lg text-green-400",
-              beacon.battery < 20 ? "bg-red-500/10 text-red-400" : "bg-green-500/10"
-            )}>
-              <Battery size={16} />
-            </div>
-            <div>
-              <p className="text-[10px] text-gray-500 uppercase">Battery</p>
-              <p className="font-bold">{beacon.battery}%</p>
-            </div>
-          </div>
-
-          {/* RSSI */}
-          <div className="flex items-center gap-2">
-            <div className="p-2 rounded-lg bg-purple-500/10 text-purple-400">
-              <Signal size={16} />
-            </div>
-            <div>
-              <p className="text-[10px] text-gray-500 uppercase">RSSI</p>
-              <p className="font-bold">{beacon.rssi} dBm</p>
-            </div>
-          </div>
-
-          {/* Last seen */}
-          <div className="flex items-center gap-2 min-w-[120px]">
-            <div className="p-2 rounded-lg bg-orange-500/10 text-orange-400">
-              <Clock size={16} />
-            </div>
-            <div>
-              <p className="text-[10px] text-gray-500 uppercase">Last seen</p>
-              <p className="font-bold text-xs">
-                {new Date(beacon.report_at).toLocaleTimeString()}
-              </p>
-            </div>
-          </div>
+        <div className="flex items-center gap-2 min-w-[200px]">
+          <Router size={16} className="text-cyan-400" />
+          <span className="text-xs text-gray-500 uppercase">Gateway</span>
+          <span className="text-sm font-semibold truncate max-w-[140px]" title={gatewayText}>{gatewayText}</span>
         </div>
+
+        <div className="flex items-center gap-2 min-w-[130px]">
+          <Thermometer size={16} className="text-blue-400" />
+          <span className="text-xs text-gray-500 uppercase">Temp</span>
+          <span className="text-sm font-semibold">{beacon.temp}°C</span>
+        </div>
+
+        <div className="flex items-center gap-2 min-w-[130px]">
+          <Battery size={16} className={cn("text-green-400", beacon.battery < 20 && "text-red-400")} />
+          <span className="text-xs text-gray-500 uppercase">Battery</span>
+          <span className="text-sm font-semibold">{beacon.battery}%</span>
+        </div>
+
+        <div className="flex items-center gap-2 min-w-[140px]">
+          <Signal size={16} className="text-purple-400" />
+          <span className="text-xs text-gray-500 uppercase">RSSI</span>
+          <span className="text-sm font-semibold">{beacon.rssi} dBm</span>
+        </div>
+
+        <div className="flex items-center gap-2 min-w-[170px]">
+          <Clock size={16} className="text-orange-400" />
+          <span className="text-xs text-gray-500 uppercase">Last Seen</span>
+          <span className="text-sm font-semibold">{timeText}</span>
+        </div>
+
+        {beacon.gateway_mac_addr && (
+          <div className="flex items-center gap-2 min-w-[230px]">
+            <span className="text-xs text-gray-500 uppercase">Gateway MAC</span>
+            <span className="text-xs font-mono text-gray-300 truncate">{beacon.gateway_mac_addr}</span>
+          </div>
+        )}
       </div>
     </motion.div>
   );
