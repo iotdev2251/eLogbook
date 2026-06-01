@@ -3,11 +3,30 @@
 @tailwind utilities;
 
 :root {
-  color-scheme: dark;
+  color-scheme: light dark;
+  --color-bg: #ffffff;
+  --color-card: #f8fafc;
+  --color-border: #e2e8f0;
+  --color-text: #0f172a;
+  --color-muted: #64748b;
+  --color-input-bg: #ffffff;
+  --color-panel-hover: #f1f5f9;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-bg: #0f1117;
+    --color-card: #1a1d27;
+    --color-border: #2a2e3a;
+    --color-text: #f1f5f9;
+    --color-muted: #94a3b8;
+    --color-input-bg: #12151c;
+    --color-panel-hover: #222633;
+  }
 }
 
 body {
-  @apply bg-[#0f1117] text-gray-100 font-sans;
+  @apply bg-background text-foreground font-sans;
   margin: 0;
 }
 
@@ -16,7 +35,9 @@ h1, h2, h3, h4 {
 }
 
 .glass-panel {
-  @apply bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl;
+  @apply backdrop-blur-md rounded-2xl border;
+  background-color: var(--color-card);
+  border-color: var(--color-border);
 }
 
 .accent-gradient {
@@ -25,4 +46,15 @@ h1, h2, h3, h4 {
 
 .text-gradient {
   @apply bg-gradient-to-r from-accent-cyan to-accent-purple bg-clip-text text-transparent;
+}
+
+.input-field {
+  @apply w-full rounded-xl px-4 py-2 border focus:outline-none focus:ring-1 focus:ring-accent-cyan/50 focus:border-accent-cyan/50 transition-all;
+  background-color: var(--color-input-bg);
+  border-color: var(--color-border);
+  color: var(--color-text);
+}
+
+.input-field::placeholder {
+  color: var(--color-muted);
 }

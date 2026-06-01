@@ -27,9 +27,9 @@ export const Login = ({ onLogin }) => {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
-      <div className="glass-panel p-8 w-full max-w-md flex flex-col gap-8">
+      <div className="glass-panel p-8 w-full max-w-md flex flex-col gap-8 shadow-lg">
         <div className="text-center">
-          <div className="w-16 h-16 rounded-2xl accent-gradient mx-auto flex items-center justify-center mb-4 shadow-[0_0_30px_rgba(34,211,238,0.3)]">
+          <div className="w-16 h-16 rounded-2xl accent-gradient mx-auto flex items-center justify-center mb-4 shadow-md">
             <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-white">
               <path d="M4.9 19.1C1 15.2 1 8.8 4.9 4.9" />
               <path d="M7.8 16.2c-2.3-2.3-2.3-6.1 0-8.4" />
@@ -38,46 +38,46 @@ export const Login = ({ onLogin }) => {
               <path d="M19.1 4.9C23 8.8 23 15.2 19.1 19.1" />
             </svg>
           </div>
-          <h1 className="text-3xl font-bold font-display bg-gradient-to-r from-white to-gray-400 bg-clip-text text-transparent">
+          <h1 className="text-3xl font-bold font-display text-gradient">
             TempTrack
           </h1>
-          <p className="text-gray-500 mt-2 text-sm uppercase tracking-widest">System Login</p>
+          <p className="text-muted mt-2 text-sm uppercase tracking-widest">System Login</p>
         </div>
 
         {error && (
-          <div className="bg-red-500/10 border border-red-500/50 text-red-400 p-3 rounded-lg text-sm text-center">
+          <div className="bg-red-50 dark:bg-red-500/10 border border-red-300 dark:border-red-500/50 text-red-700 dark:text-red-400 p-3 rounded-lg text-sm text-center">
             {error}
           </div>
         )}
 
         <form onSubmit={handleLogin} className="flex flex-col gap-4">
           <div className="relative">
-            <User className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 w-5 h-5" />
-            <input 
-              type="text" 
-              placeholder="Username" 
+            <User className="absolute left-3 top-1/2 -translate-y-1/2 text-muted w-5 h-5" />
+            <input
+              type="text"
+              placeholder="Username"
               value={username}
               onChange={e => setUsername(e.target.value)}
-              className="w-full bg-black/20 border border-white/10 rounded-xl px-10 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-accent-cyan/50 focus:ring-1 focus:ring-accent-cyan/50 transition-all"
+              className="input-field pl-10 py-3"
               required
             />
           </div>
           <div className="relative">
-            <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 w-5 h-5" />
-            <input 
-              type="password" 
-              placeholder="Password" 
+            <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-muted w-5 h-5" />
+            <input
+              type="password"
+              placeholder="Password"
               value={password}
               onChange={e => setPassword(e.target.value)}
-              className="w-full bg-black/20 border border-white/10 rounded-xl px-10 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-accent-cyan/50 focus:ring-1 focus:ring-accent-cyan/50 transition-all"
+              className="input-field pl-10 py-3"
               required
             />
           </div>
-          
-          <button 
-            type="submit" 
+
+          <button
+            type="submit"
             disabled={loading}
-            className="w-full bg-accent-cyan text-black font-bold py-3 rounded-xl mt-4 hover:bg-cyan-400 active:scale-95 transition-all disabled:opacity-50 disabled:active:scale-100"
+            className="w-full bg-accent-cyan text-white font-bold py-3 rounded-xl mt-4 hover:opacity-90 active:scale-95 transition-all disabled:opacity-50 disabled:active:scale-100"
           >
             {loading ? 'Authenticating...' : 'Access Dashboard'}
           </button>

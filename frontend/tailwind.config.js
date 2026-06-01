@@ -4,15 +4,18 @@ export default {
     "./index.html",
     "./src/**/*.{js,ts,jsx,tsx}",
   ],
+  darkMode: 'media',
   theme: {
     extend: {
       colors: {
-        background: '#0f1117',
-        card: '#1a1d27',
-        border: '#2a2e3a',
+        background: 'var(--color-bg)',
+        card: 'var(--color-card)',
+        border: 'var(--color-border)',
+        foreground: 'var(--color-text)',
+        muted: 'var(--color-muted)',
         accent: {
-          cyan: '#00f2ff',
-          purple: '#bc13fe',
+          cyan: '#00b8d4',
+          purple: '#9333ea',
         }
       },
       fontFamily: {

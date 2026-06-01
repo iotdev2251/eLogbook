@@ -6,7 +6,6 @@ import { Login } from './components/Login';
 import { Settings } from './components/Settings';
 import { LayoutDashboard, History, Settings as SettingsIcon, Bell, LogOut } from 'lucide-react';
 
-// Configure axios to send cookies
 axios.defaults.withCredentials = true;
 
 function AppContent() {
@@ -16,17 +15,10 @@ function AppContent() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Check if user is logged in
     axios.get('/auth/me')
-      .then(res => {
-        setUser(res.data);
-      })
-      .catch(() => {
-        setUser(null);
-      })
-      .finally(() => {
-        setLoading(false);
-      });
+      .then(res => setUser(res.data))
+      .catch(() => setUser(null))
+      .finally(() => setLoading(false));
   }, []);
 
   const handleLogout = async () => {
@@ -40,7 +32,11 @@ function AppContent() {
   };
 
   if (loading) {
-    return <div className="min-h-screen flex items-center justify-center bg-background text-white">Loading...</div>;
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background text-foreground">
+        Loading...
+      </div>
+    );
   }
 
   if (!user && location.pathname !== '/login') {
@@ -54,74 +50,73 @@ function AppContent() {
   const activeTab = location.pathname.substring(1) || 'dashboard';
 
   return (
-    <div className="min-h-screen flex bg-background">
-      {/* Sidebar */}
-      <nav className="w-64 border-r border-border flex flex-col p-6 gap-8">
+    <div className="min-h-screen flex bg-background text-foreground">
+      <nav className="w-64 border-r border-border flex flex-col p-6 gap-8 bg-card">
         <div className="flex items-center gap-3 px-2">
           <div className="w-8 h-8 rounded-lg accent-gradient flex items-center justify-center">
             <RadioIcon />
           </div>
-          <h1 className="text-xl font-bold font-display bg-gradient-to-r from-white to-gray-500 bg-clip-text text-transparent">
+          <h1 className="text-xl font-bold font-display text-gradient">
             TempTrack
           </h1>
         </div>
 
         <div className="flex flex-col gap-2">
-          <NavItem 
-            icon={<LayoutDashboard size={20} />} 
-            label="Dashboard" 
-            active={activeTab === 'dashboard'} 
+          <NavItem
+            icon={<LayoutDashboard size={20} />}
+            label="Dashboard"
+            active={activeTab === 'dashboard'}
             onClick={() => navigate('/')}
           />
-          <NavItem 
-            icon={<History size={20} />} 
-            label="History" 
-            active={activeTab === 'history'} 
+          <NavItem
+            icon={<History size={20} />}
+            label="History"
+            active={activeTab === 'history'}
             onClick={() => navigate('/history')}
           />
-          <NavItem 
-            icon={<Bell size={20} />} 
-            label="Alerts" 
-            active={activeTab === 'alerts'} 
+          <NavItem
+            icon={<Bell size={20} />}
+            label="Alerts"
+            active={activeTab === 'alerts'}
             onClick={() => navigate('/alerts')}
           />
           <div className="mt-4 pt-4 border-t border-border">
-            <NavItem 
-              icon={<SettingsIcon size={20} />} 
-              label="Settings" 
-              active={activeTab === 'settings'} 
+            <NavItem
+              icon={<SettingsIcon size={20} />}
+              label="Settings"
+              active={activeTab === 'settings'}
               onClick={() => navigate('/settings')}
             />
           </div>
         </div>
 
         <div className="mt-auto flex flex-col gap-4">
-          <button onClick={handleLogout} className="flex items-center gap-3 px-4 py-2 text-red-400 hover:bg-red-500/10 rounded-xl transition-all">
+          <button
+            onClick={handleLogout}
+            className="flex items-center gap-3 px-4 py-2 text-red-600 dark:text-red-400 hover:bg-red-500/10 rounded-xl transition-all"
+          >
             <LogOut size={18} />
             <span className="font-medium text-sm">Sign Out</span>
           </button>
           <div className="p-4 glass-panel flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-gray-700 overflow-hidden flex-shrink-0">
-               <img src={`https://ui-avatars.com/api/?name=${user.username}&background=random`} alt={user.username} />
+            <div className="w-10 h-10 rounded-full bg-slate-200 dark:bg-gray-700 overflow-hidden flex-shrink-0">
+              <img src={`https://ui-avatars.com/api/?name=${user.username}&background=random`} alt={user.username} />
             </div>
             <div className="overflow-hidden">
               <p className="text-sm font-bold truncate">{user.username}</p>
-              <p className="text-[10px] text-gray-500 uppercase tracking-widest">{user.role}</p>
+              <p className="text-[10px] text-muted uppercase tracking-widest">{user.role}</p>
             </div>
           </div>
         </div>
       </nav>
 
-      {/* Main Content */}
-      <main className="flex-1 overflow-y-auto">
-        <header className="h-16 border-b border-border flex items-center justify-between px-8">
-          <h2 className="text-sm text-gray-400 font-medium uppercase tracking-widest">
+      <main className="flex-1 overflow-y-auto bg-background">
+        <header className="h-16 border-b border-border flex items-center justify-between px-8 bg-card">
+          <h2 className="text-sm text-muted font-medium uppercase tracking-widest">
             {activeTab} View
           </h2>
-          <div className="flex items-center gap-4">
-            <div className="text-xs text-gray-500">
-              System Time: {new Date().toLocaleTimeString()}
-            </div>
+          <div className="text-xs text-muted">
+            System Time: {new Date().toLocaleTimeString()}
           </div>
         </header>
 
@@ -137,8 +132,8 @@ function AppContent() {
 }
 
 const PlaceholderView = ({ name }) => (
-  <div className="p-12 text-center text-gray-500">
-    <h2 className="text-2xl font-bold mb-4">{name} View is coming soon</h2>
+  <div className="p-12 text-center text-muted">
+    <h2 className="text-2xl font-bold mb-4 text-foreground">{name} View is coming soon</h2>
     <p>We are currently implementing this feature.</p>
   </div>
 );
@@ -155,9 +150,9 @@ const NavItem = ({ icon, label, active, onClick }) => (
   <button
     onClick={onClick}
     className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 ${
-      active 
-        ? 'bg-accent-cyan/10 text-accent-cyan ring-1 ring-accent-cyan/20' 
-        : 'text-gray-400 hover:text-white hover:bg-white/5'
+      active
+        ? 'bg-cyan-100 text-cyan-800 ring-1 ring-cyan-300 dark:bg-accent-cyan/10 dark:text-accent-cyan dark:ring-accent-cyan/20'
+        : 'text-muted hover:text-foreground hover:bg-[var(--color-panel-hover)]'
     }`}
   >
     {icon}

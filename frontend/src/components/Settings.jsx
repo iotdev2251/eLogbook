@@ -57,8 +57,8 @@ export const Settings = ({ currentUser }) => {
 
   if (currentUser?.role !== 'admin') {
     return (
-      <div className="p-12 text-center text-gray-500">
-        <h2 className="text-2xl font-bold mb-4">Access Denied</h2>
+      <div className="p-12 text-center text-muted">
+        <h2 className="text-2xl font-bold mb-4 text-foreground">Access Denied</h2>
         <p>You must be an administrator to view system settings.</p>
       </div>
     );
@@ -71,11 +71,11 @@ export const Settings = ({ currentUser }) => {
           <h2 className="text-2xl font-bold font-display flex items-center gap-2">
             User Management
           </h2>
-          <p className="text-sm text-gray-400 mt-1">Add or remove system users.</p>
+          <p className="text-sm text-muted mt-1">Add or remove system users.</p>
         </div>
       </div>
 
-      {error && <div className="text-red-400 bg-red-500/10 p-4 rounded-xl border border-red-500/20">{error}</div>}
+      {error && <div className="text-red-700 dark:text-red-400 bg-red-50 dark:bg-red-500/10 p-4 rounded-xl border border-red-300 dark:border-red-500/20">{error}</div>}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Create User Form */}
@@ -86,31 +86,31 @@ export const Settings = ({ currentUser }) => {
           </h3>
           <form onSubmit={handleCreateUser} className="flex flex-col gap-4">
             <div>
-              <label className="text-xs text-gray-400 uppercase tracking-wider block mb-2">Username</label>
+              <label className="text-xs text-muted uppercase tracking-wider block mb-2">Username</label>
               <input 
                 type="text" 
                 value={newUsername}
                 onChange={e => setNewUsername(e.target.value)}
-                className="w-full bg-black/20 border border-white/10 rounded-lg px-4 py-2 text-white placeholder-gray-600 focus:outline-none focus:border-accent-cyan/50"
+                className="input-field"
                 required
               />
             </div>
             <div>
-              <label className="text-xs text-gray-400 uppercase tracking-wider block mb-2">Password</label>
+              <label className="text-xs text-muted uppercase tracking-wider block mb-2">Password</label>
               <input 
                 type="password" 
                 value={newPassword}
                 onChange={e => setNewPassword(e.target.value)}
-                className="w-full bg-black/20 border border-white/10 rounded-lg px-4 py-2 text-white placeholder-gray-600 focus:outline-none focus:border-accent-cyan/50"
+                className="input-field"
                 required
               />
             </div>
             <div>
-              <label className="text-xs text-gray-400 uppercase tracking-wider block mb-2">Role</label>
+              <label className="text-xs text-muted uppercase tracking-wider block mb-2">Role</label>
               <select 
                 value={newRole}
                 onChange={e => setNewRole(e.target.value)}
-                className="w-full bg-black/20 border border-white/10 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-accent-cyan/50 appearance-none"
+                className="input-field appearance-none"
               >
                 <option value="viewer">Viewer</option>
                 <option value="admin">Administrator</option>
@@ -118,7 +118,7 @@ export const Settings = ({ currentUser }) => {
             </div>
             <button 
               type="submit"
-              className="mt-4 bg-white/10 hover:bg-accent-cyan/20 hover:text-accent-cyan text-white font-medium py-2 rounded-lg transition-all"
+              className="mt-4 bg-slate-100 dark:bg-white/10 hover:bg-cyan-100 dark:hover:bg-accent-cyan/20 hover:text-cyan-800 dark:hover:text-accent-cyan text-foreground font-medium py-2 rounded-lg transition-all"
             >
               Add User
             </button>
@@ -132,24 +132,24 @@ export const Settings = ({ currentUser }) => {
             Active Users
           </h3>
           {loading ? (
-            <p className="text-gray-500">Loading users...</p>
+            <p className="text-muted">Loading users...</p>
           ) : (
             <div className="flex flex-col gap-3">
               {users.map(u => (
-                <div key={u.id} className="bg-black/20 border border-white/5 p-4 rounded-xl flex items-center justify-between">
+                <div key={u.id} className="bg-slate-50 dark:bg-black/20 border border-border p-4 rounded-xl flex items-center justify-between">
                   <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 rounded-full bg-gray-800 flex items-center justify-center">
-                      {u.role === 'admin' ? <Shield size={18} className="text-yellow-400" /> : <User size={18} className="text-gray-400" />}
+                    <div className="w-10 h-10 rounded-full bg-slate-200 dark:bg-gray-800 flex items-center justify-center">
+                      {u.role === 'admin' ? <Shield size={18} className="text-yellow-600 dark:text-yellow-400" /> : <User size={18} className="text-muted" />}
                     </div>
                     <div>
                       <p className="font-bold">{u.username}</p>
-                      <p className="text-xs text-gray-500 uppercase tracking-widest">{u.role}</p>
+                      <p className="text-xs text-muted uppercase tracking-widest">{u.role}</p>
                     </div>
                   </div>
                   {u.id !== currentUser.id && (
                     <button 
                       onClick={() => handleDeleteUser(u.id)}
-                      className="p-2 text-gray-500 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-all"
+                      className="p-2 text-muted hover:text-red-600 dark:hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-all"
                       title="Delete User"
                     >
                       <Trash2 size={18} />
