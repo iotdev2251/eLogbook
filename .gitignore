@@ -18,6 +18,3 @@ Nodeapp_local_backup/
 # Editor
 .vscode/
 .idea/
-
-# Local notes and archives
-TempTrack_*.md
