@@ -1,6 +1,7 @@
 import { loggerFactory } from '../../config/logger.js';
 import { BEACON_STATUS } from '../beacon/beacon-status.js';
 import { c } from '../../config/constant.js'
+import { formatClientTemp, formatClientBattery } from '../beacon/sensor-values.js'
 import pkg from '@prisma/client'
 
 const prisma = new pkg.PrismaClient()
@@ -53,8 +54,8 @@ class BeaconHistoryApi {
                 name: beacon.name,
                 nickname: beacon.nickname,
                 beacon_mac_addr: beacon.beacon_mac_addr,
-                temp: beacon.temp / 10,
-                battery: beacon.battery,
+                temp: formatClientTemp(beacon.temp),
+                battery: formatClientBattery(beacon.battery),
                 rssi: beacon.rssi,
                 status: beacon.status.toUpperCase(),
                 gateway_name: beacon.gateway_name,

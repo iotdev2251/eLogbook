@@ -1,20 +1,9 @@
 import { loggerFactory } from '../../config/logger.js';
 import { BEACON_STATUS } from './beacon-status.js'
 import { c } from '../../config/constant.js'
+import { formatClientTemp, formatClientBattery } from './sensor-values.js'
 
 const MAX_RECORD = c.BEACON_API_PAGE_RECORD
-
-function formatClientTemp(tempTenths) {
-    if (tempTenths == null) return null
-    const celsius = tempTenths / 10
-    if (celsius < -40 || celsius > 85) return null
-    return celsius
-}
-
-function formatClientBattery(battery) {
-    if (battery == null || battery < 0 || battery > 100) return null
-    return battery
-}
 
 function mapBeaconForClient(beacon) {
     if (beacon == null) {

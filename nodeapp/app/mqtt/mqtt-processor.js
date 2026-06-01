@@ -2,6 +2,7 @@ import { loggerFactory } from '../../config/logger.js';
 import { BEACON_STATUS } from '../beacon/beacon-status.js'
 import { mapBeaconForClient } from '../beacon/beacon-api.js'
 import { parseMfrPayload } from './mfr-parser.js'
+import { isPlausibleSensorTemp, TEMP_UNKNOWN } from '../beacon/sensor-values.js'
 
 const logger = loggerFactory('mqtt-processor')
 
@@ -47,6 +48,12 @@ class MqttProcessor{
             beacon.mac_addr = updatedData.mac
             if (parsed.temp != null) {
                 beacon.temp = parsed.temp
+            } else if (
+                parsed.profile === 'minew-info' &&
+                !isPlausibleSensorTemp(beacon.temp)
+            ) {
+                // Drop stale wrong readings (e.g. 58.8°C from old parser)
+                beacon.temp = TEMP_UNKNOWN
             }
             if (parsed.battery != null) {
                 beacon.battery = parsed.battery
