@@ -12,8 +12,7 @@ __MACOSX/
 **/.DS_Store
 *.zip
 
-# Duplicate folder at repo root only (Windows is case-insensitive)
-/Nodeapp/
+# Local duplicate folder backup only (do not use /Nodeapp/ — breaks nodeapp/ on Windows)
 Nodeapp_local_backup/
 
 # Editor

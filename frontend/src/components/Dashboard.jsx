@@ -51,9 +51,15 @@ export const Dashboard = () => {
         const gateway = gatewayDisplayName(beacon).toLowerCase();
         return name.includes(q) || gateway.includes(q);
       })
-      .sort((a, b) =>
-        beaconDisplayName(a).localeCompare(beaconDisplayName(b), undefined, { sensitivity: 'base' })
-      );
+      .sort((a, b) => {
+        const byName = beaconDisplayName(a).localeCompare(
+          beaconDisplayName(b),
+          undefined,
+          { sensitivity: 'base', numeric: true }
+        );
+        if (byName !== 0) return byName;
+        return (a.mac_addr || '').localeCompare(b.mac_addr || '', undefined, { numeric: true });
+      });
   }, [beacons, searchQuery]);
 
   const allBeacons = Object.values(beacons);

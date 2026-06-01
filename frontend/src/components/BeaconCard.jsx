@@ -54,13 +54,17 @@ export const BeaconCard = ({ beacon }) => {
         <div className="flex items-center gap-2 min-w-[130px]">
           <Thermometer size={16} className="text-blue-600 dark:text-blue-400" />
           <span className="text-xs text-muted uppercase">Temp</span>
-          <span className="text-sm font-semibold">{beacon.temp}°C</span>
+          <span className="text-sm font-semibold">
+            {beacon.temp != null ? `${beacon.temp}°C` : '—'}
+          </span>
         </div>
 
         <div className="flex items-center gap-2 min-w-[130px]">
           <Battery size={16} className={cn("text-green-600 dark:text-green-400", beacon.battery < 20 && "text-red-500")} />
           <span className="text-xs text-muted uppercase">Battery</span>
-          <span className="text-sm font-semibold">{beacon.battery}%</span>
+          <span className="text-sm font-semibold">
+            {beacon.battery != null ? `${beacon.battery}%` : '—'}
+          </span>
         </div>
 
         <div className="flex items-center gap-2 min-w-[140px]">

@@ -4,6 +4,18 @@ import { c } from '../../config/constant.js'
 
 const MAX_RECORD = c.BEACON_API_PAGE_RECORD
 
+function formatClientTemp(tempTenths) {
+    if (tempTenths == null) return null
+    const celsius = tempTenths / 10
+    if (celsius < -40 || celsius > 85) return null
+    return celsius
+}
+
+function formatClientBattery(battery) {
+    if (battery == null || battery < 0 || battery > 100) return null
+    return battery
+}
+
 function mapBeaconForClient(beacon) {
     if (beacon == null) {
         return null
@@ -12,8 +24,8 @@ function mapBeaconForClient(beacon) {
         mac_addr: beacon.mac_addr,
         name: beacon.name,
         nickname: beacon.nickname,
-        temp: beacon.temp / 10,
-        battery: beacon.battery,
+        temp: formatClientTemp(beacon.temp),
+        battery: formatClientBattery(beacon.battery),
         rssi: beacon.rssi,
         status: beacon.status,
         report_at: beacon.report_at,

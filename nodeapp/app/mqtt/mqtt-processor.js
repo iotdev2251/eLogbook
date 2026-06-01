@@ -1,6 +1,7 @@
 import { loggerFactory } from '../../config/logger.js';
 import { BEACON_STATUS } from '../beacon/beacon-status.js'
 import { mapBeaconForClient } from '../beacon/beacon-api.js'
+import { parseMfrPayload } from './mfr-parser.js'
 
 const logger = loggerFactory('mqtt-processor')
 
@@ -29,9 +30,8 @@ class MqttProcessor{
     async _onBeaconData(updatedData, beacon, gateway) {
         const mfr = updatedData.MFR
         if (mfr == undefined) return;
-        const temperatureData = mfr.substr(12, 4)
-        const temperature = this._convertTemperature(temperatureData)
-        const battery = parseInt(mfr.substr(16, 2), 16) || 0
+
+        const parsed = parseMfrPayload(mfr)
         const rssi = parseInt(updatedData.rssi) || 1234
             
         const sometimesBefore = new Date()
@@ -45,8 +45,12 @@ class MqttProcessor{
         if(shouldUpdate){
             beacon.name = updatedData.name
             beacon.mac_addr = updatedData.mac
-            beacon.temp = temperature
-            beacon.battery = battery
+            if (parsed.temp != null) {
+                beacon.temp = parsed.temp
+            }
+            if (parsed.battery != null) {
+                beacon.battery = parsed.battery
+            }
             beacon.rssi = rssi
             beacon.gateway = gateway
             beacon.gateway_id = gateway.id
@@ -55,16 +59,6 @@ class MqttProcessor{
             beacon.status = BEACON_STATUS.IN
 
             this._notify([beacon])
-        }
-    }
-
-    _convertTemperature(temperatureData){
-        try{
-            return Buffer.from(temperatureData, 'hex').readInt16LE()
-        }
-        catch(e){
-            // logger.error("Temperature cannot be converted: %s", temperatureData, e)
-            return -2730
         }
     }
 
