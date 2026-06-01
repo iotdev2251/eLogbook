@@ -31,7 +31,7 @@ class MqttProcessor{
         const mfr = updatedData.MFR
         if (mfr == undefined) return;
 
-        const parsed = parseMfrPayload(mfr)
+        const parsed = parseMfrPayload(mfr, updatedData.mac)
         const rssi = parseInt(updatedData.rssi) || 1234
             
         const sometimesBefore = new Date()
