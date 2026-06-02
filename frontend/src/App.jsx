@@ -48,6 +48,13 @@ function AppContent() {
   }
 
   const activeTab = location.pathname.substring(1) || 'dashboard';
+  const tabTitleMap = {
+    dashboard: 'Real Time Status',
+    history: 'History',
+    alerts: 'Alerts',
+    settings: 'Settings',
+  };
+  const activeTitle = tabTitleMap[activeTab] || activeTab;
 
   return (
     <div className="min-h-screen flex bg-background text-foreground">
@@ -64,7 +71,7 @@ function AppContent() {
         <div className="flex flex-col gap-2">
           <NavItem
             icon={<LayoutDashboard size={20} />}
-            label="Dashboard"
+            label="Real Time Status"
             active={activeTab === 'dashboard'}
             onClick={() => navigate('/')}
           />
@@ -113,7 +120,7 @@ function AppContent() {
       <main className="flex-1 overflow-y-auto bg-background">
         <header className="h-16 border-b border-border flex items-center justify-between px-8 bg-card">
           <h2 className="text-sm text-muted font-medium uppercase tracking-widest">
-            {activeTab} View
+            {activeTitle} View
           </h2>
           <div className="text-xs text-muted">
             System Time: {new Date().toLocaleTimeString()}

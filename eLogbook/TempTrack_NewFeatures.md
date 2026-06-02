@@ -33,3 +33,11 @@
 - **角色**：`admin` / `viewer`
 - **受保護頁面**：需登入才能看 Dashboard
 - **Settings**：管理員可新增／刪除使用者
+
+---
+
+## [2026-06-02] Dashboard 首頁三分區
+
+- **首頁命名更新**：側欄名稱改為 `Real Time Status`
+- **Dashboard 1**：新增溫度 Line Chart（X 軸溫度、Y 軸 Beacon 名稱）
+- **Dashboard 2 / 3**：建立空白圖表框，供後續功能填充

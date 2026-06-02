@@ -76,3 +76,38 @@ docker compose logs -f app
 - **狀態**：已完成（見當時 commit）
 - **內容**：Beacon 橫向卡片、JWT 登入、Settings 使用者管理
 - **部署**：`npm install`、`npx prisma migrate deploy`、`npx prisma db seed`
+
+---
+
+## [2026-06-02] 首頁重構為三大 Dashboard
+
+### 修改內容
+
+1. **首頁名稱調整**
+   - 側欄原本 `Dashboard` 改為 `Real Time Status`
+   - Header 顯示改為 `Real Time Status View`
+
+2. **首頁版面重建**
+   - 重新設計首頁為 3 個 dashboard 區塊
+   - Dashboard 1：溫度 Line Chart
+   - Dashboard 2、Dashboard 3：先建立空框（預留後續功能）
+
+3. **Line Chart 定義**
+   - 使用 `recharts` 建立折線圖
+   - X 軸：Temperature (°C)
+   - Y 軸：Beacon 名稱
+   - 僅顯示有溫度數據的 Beacon
+
+### 影響檔案
+
+- `frontend/src/App.jsx`
+- `frontend/src/components/Dashboard.jsx`
+
+### Ubuntu 更新步驟
+
+```bash
+cd ~/eLogbook
+git fetch origin
+git reset --hard origin/main
+docker compose up --build -d
+```
