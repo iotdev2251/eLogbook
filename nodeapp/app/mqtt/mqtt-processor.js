@@ -78,6 +78,12 @@ class MqttProcessor{
         this._io.emit('ADDED_DATA', payload);
     }
 
+    publishClientUpdate(beacons) {
+        if (beacons?.length > 0) {
+            this._notify(beacons)
+        }
+    }
+
     setBeaconsStatus() {
         const expired = new Date()
         expired.setSeconds(expired.getSeconds() - this._expiredSeconds)

@@ -59,6 +59,41 @@ class BeaconApi{
         const beacon = this._beaconRepository.getAllBeacons()[mac_addr]
         return mapBeaconForClient(beacon)
     }
+
+    async updateLabels(mac_addr, { nickname, gatewayName }) {
+        const beacon = this._beaconRepository.getExistingBeacon(mac_addr)
+        if (beacon == null) {
+            return { error: 'NOT_FOUND' }
+        }
+
+        const notifyMap = new Map()
+
+        if (nickname !== undefined) {
+            await this._beaconRepository.setBeaconNickname(beacon, nickname)
+            notifyMap.set(beacon.mac_addr, beacon)
+        }
+
+        if (gatewayName !== undefined) {
+            const gatewayMac = beacon.gateway?.mac_addr
+            if (!gatewayMac) {
+                return { error: 'NO_GATEWAY' }
+            }
+            const result = await this._beaconRepository.updateGatewayDisplayName(
+                gatewayMac,
+                gatewayName
+            )
+            if (result == null) {
+                return { error: 'GATEWAY_NOT_FOUND' }
+            }
+            result.beacons.forEach(b => notifyMap.set(b.mac_addr, b))
+        }
+
+        const beacons = [...notifyMap.values()]
+        return {
+            beacons,
+            clients: beacons.map(mapBeaconForClient),
+        }
+    }
 }
 
 export { BeaconApi, mapBeaconForClient }

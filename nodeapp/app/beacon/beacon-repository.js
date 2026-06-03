@@ -130,6 +130,44 @@ class BeaconRepository {
     getAllGateways() {
         return this._gateways
     }
+
+    getExistingBeacon(mac_addr) {
+        const mac = (mac_addr || '').toUpperCase()
+        return this._beacons[mac]
+    }
+
+    async setBeaconNickname(beacon, nickname) {
+        const trimmed = typeof nickname === 'string' ? nickname.trim() : ''
+        beacon.nickname = trimmed.length > 0 ? trimmed : null
+        await this._beaconDataStore.updateBeaconNickname(beacon.mac_addr, beacon.nickname)
+        return beacon
+    }
+
+    async updateGatewayDisplayName(gatewayMac, name) {
+        const mac = (gatewayMac || '').toUpperCase()
+        const gateway = this._gateways[mac]
+        if (!gateway) {
+            return null
+        }
+        const trimmed = (name || '').trim()
+        if (trimmed.length === 0) {
+            throw new Error('Gateway name is required')
+        }
+        gateway.name = trimmed
+        await this._beaconDataStore.updateGatewayName(gateway.id, trimmed)
+
+        const updatedBeacons = []
+        for (const beaconMacAddr in this._beacons) {
+            const beacon = this._beacons[beaconMacAddr]
+            if (beacon.gateway_id === gateway.id) {
+                if (beacon.gateway) {
+                    beacon.gateway.name = trimmed
+                }
+                updatedBeacons.push(beacon)
+            }
+        }
+        return { gateway, beacons: updatedBeacons }
+    }
 }
 
 export { BeaconRepository }

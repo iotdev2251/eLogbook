@@ -114,6 +114,46 @@ docker compose up --build -d
 
 ---
 
+## [2026-06-03] Admin 編輯 Beacon / Gateway 名稱與列表版面
+
+### 修改內容
+
+1. **Admin 設定按鈕**
+   - Real Time Status 每列 Beacon 右側設定鈕（僅 admin 可見）
+   - Modal 可編輯 Beacon 顯示名（`nickname`）與 Gateway 名稱
+
+2. **API**
+   - `PATCH /beacons/:mac/labels`（需 admin）
+   - 修正 DB `update` 時一併持久化 `nickname`
+
+3. **版面**
+   - `BeaconCard` 改為 responsive grid，移除橫向捲動與固定最小寬度
+
+### 影響檔案
+
+- `nodeapp/app/beacon/beacon-api.js`
+- `nodeapp/app/beacon/beacon-router.js`
+- `nodeapp/app/beacon/beacon-repository.js`
+- `nodeapp/app/beacon/beacon-datastore.js`
+- `nodeapp/app/mqtt/mqtt-processor.js`
+- `nodeapp/app/app.js`
+- `frontend/src/components/BeaconCard.jsx`
+- `frontend/src/components/BeaconEditModal.jsx`（新增）
+- `frontend/src/components/RealTimeStatus.jsx`
+- `frontend/src/App.jsx`
+
+### Ubuntu 更新步驟
+
+```bash
+cd ~/eLogbook
+docker compose down
+sudo chown -R $USER:$USER nodeapp
+git fetch origin && git reset --hard origin/main
+docker compose up --build -d
+```
+
+---
+
 ## [2026-06-02] 修正圖表軸向並還原 Real Time Status 列表頁
 
 ### 修改內容

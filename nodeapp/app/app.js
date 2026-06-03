@@ -75,7 +75,7 @@ class MyApp {
 
     _initRouter(app) {
         app.use('/auth', authRouter)
-        app.use('/beacons', authMiddleware, addBeaconRouter(this._beaconRepository))
+        app.use('/beacons', authMiddleware, addBeaconRouter(this._beaconRepository, this._mqttProcessor))
         app.use('/history', authMiddleware, addHistoryRouter())
 
         // Serve the dashboard for any other routes (SPA support)

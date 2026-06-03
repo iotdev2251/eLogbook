@@ -49,3 +49,12 @@
 
 - **Dashboard 首頁**（`/`）：三個 dashboard 區塊；圖表 1 為 X=Beacon 名稱、Y=溫度
 - **Real Time Status**（`/real-time`）：還原即時 Beacon 列表（搜尋、統計卡、橫向資料列）
+
+---
+
+## [2026-06-03] Admin 可編輯 Beacon / Gateway 名稱
+
+- **權限**：僅 `admin` 可在每列 Beacon 按設定鈕改名
+- **Beacon 顯示名**：存於 `nickname`（不受 MQTT 廣播名覆寫）
+- **Gateway 顯示名**：更新 `gateway.name`（同一 gateway 下所有 Beacon 一併更新）
+- **版面**：Beacon 資料列改為格狀排版，內容留在卡片內、不橫向捲動

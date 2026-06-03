@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import axios from 'axios';
 import { useSocket } from '../hooks/useSocket';
 import { BeaconCard } from './BeaconCard';
+import { BeaconEditModal } from './BeaconEditModal';
 import { Activity, Radio, AlertCircle, CheckCircle2, Search } from 'lucide-react';
 
 const beaconDisplayName = (beacon) =>
@@ -10,10 +11,12 @@ const beaconDisplayName = (beacon) =>
 const gatewayDisplayName = (beacon) =>
   (beacon.gateway_name || beacon.gateway_id || '').trim();
 
-export const RealTimeStatus = () => {
+export const RealTimeStatus = ({ currentUser }) => {
   const [beacons, setBeacons] = useState({});
   const [searchQuery, setSearchQuery] = useState('');
+  const [editingBeacon, setEditingBeacon] = useState(null);
   const { socket, isConnected } = useSocket('/');
+  const isAdmin = currentUser?.role === 'admin';
 
   useEffect(() => {
     axios.get('/beacons')
@@ -65,6 +68,17 @@ export const RealTimeStatus = () => {
   const allBeacons = Object.values(beacons);
   const activeCount = allBeacons.filter(b => b.status === 'in').length;
   const alertCount = allBeacons.filter(b => b.status === 'alert' || b.alert).length;
+
+  const applyBeaconUpdates = (updatedList) => {
+    if (!Array.isArray(updatedList) || updatedList.length === 0) return;
+    setBeacons(prev => {
+      const next = { ...prev };
+      updatedList.forEach(b => {
+        next[b.mac_addr] = b;
+      });
+      return next;
+    });
+  };
 
   return (
     <div className="p-8 max-w-7xl mx-auto flex flex-col gap-8">
@@ -125,11 +139,23 @@ export const RealTimeStatus = () => {
             </div>
           ) : (
             beaconList.map(beacon => (
-              <BeaconCard key={beacon.mac_addr} beacon={beacon} />
+              <BeaconCard
+                key={beacon.mac_addr}
+                beacon={beacon}
+                isAdmin={isAdmin}
+                onEdit={setEditingBeacon}
+              />
             ))
           )}
         </div>
       </div>
+
+      <BeaconEditModal
+        beacon={editingBeacon}
+        open={editingBeacon != null}
+        onClose={() => setEditingBeacon(null)}
+        onSaved={applyBeaconUpdates}
+      />
     </div>
   );
 };

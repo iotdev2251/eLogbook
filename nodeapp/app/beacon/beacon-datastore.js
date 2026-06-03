@@ -12,6 +12,7 @@ class BeaconDataStore {
                 where: { mac_addr: beacon.mac_addr },
                 update: {
                     name: beacon.name,
+                    nickname: beacon.nickname,
                     temp: beacon.temp,
                     battery: beacon.battery,
                     rssi: beacon.rssi,
@@ -77,6 +78,20 @@ class BeaconDataStore {
             throw e
             return []
         }
+    }
+
+    async updateBeaconNickname(mac_addr, nickname) {
+        return prisma.beacon.update({
+            where: { mac_addr: mac_addr.toUpperCase() },
+            data: { nickname: nickname || null },
+        })
+    }
+
+    async updateGatewayName(gatewayId, name) {
+        return prisma.gateway.update({
+            where: { id: gatewayId },
+            data: { name },
+        })
     }
 
     async getAllGateways() {

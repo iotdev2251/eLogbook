@@ -138,7 +138,7 @@ function AppContent() {
 
         <Routes>
           <Route path="/" element={<Dashboard />} />
-          <Route path="/real-time" element={<RealTimeStatus />} />
+          <Route path="/real-time" element={<RealTimeStatus currentUser={user} />} />
           <Route path="/settings" element={<Settings currentUser={user} />} />
           <Route path="/history" element={<PlaceholderView name="History" />} />
           <Route path="/alerts" element={<PlaceholderView name="Alerts" />} />
