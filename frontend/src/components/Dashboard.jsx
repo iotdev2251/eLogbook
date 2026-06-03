@@ -8,6 +8,12 @@ const beaconDisplayName = (beacon) =>
 const chartMinTemp = 10;
 const chartMaxTemp = 45;
 
+function truncateLabel(text, max = 14) {
+  if (!text) return '';
+  return text.length > max ? `${text.slice(0, max)}…` : text;
+}
+
+/** X = Beacon 名稱，Y = 溫度 (°C) */
 function TemperatureSvgChart({ data }) {
   if (data.length === 0) {
     return (
@@ -17,22 +23,22 @@ function TemperatureSvgChart({ data }) {
     );
   }
 
-  const width = 980;
-  const height = 320;
-  const leftPad = 180;
-  const rightPad = 28;
-  const topPad = 20;
-  const bottomPad = 24;
+  const width = Math.max(760, 120 + data.length * 72);
+  const height = 360;
+  const leftPad = 52;
+  const rightPad = 24;
+  const topPad = 16;
+  const bottomPad = 88;
   const plotWidth = width - leftPad - rightPad;
   const plotHeight = height - topPad - bottomPad;
 
-  const yStep = data.length > 1 ? plotHeight / (data.length - 1) : 0;
-  const tempToX = (t) =>
-    leftPad + ((Math.max(chartMinTemp, Math.min(chartMaxTemp, t)) - chartMinTemp) / (chartMaxTemp - chartMinTemp)) * plotWidth;
+  const xStep = data.length > 1 ? plotWidth / (data.length - 1) : 0;
+  const tempToY = (t) =>
+    topPad + plotHeight - ((Math.max(chartMinTemp, Math.min(chartMaxTemp, t)) - chartMinTemp) / (chartMaxTemp - chartMinTemp)) * plotHeight;
 
   const points = data.map((d, i) => ({
-    x: tempToX(d.temp),
-    y: topPad + i * yStep,
+    x: leftPad + (data.length > 1 ? i * xStep : plotWidth / 2),
+    y: tempToY(d.temp),
     name: d.beaconName,
     temp: d.temp,
   }));
@@ -42,30 +48,19 @@ function TemperatureSvgChart({ data }) {
 
   return (
     <div className="w-full overflow-x-auto">
-      <svg viewBox={`0 0 ${width} ${height}`} className="w-full min-w-[760px] h-[320px]">
+      <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-[360px]" style={{ minWidth: `${Math.min(width, 1200)}px` }}>
         {gridTemps.map((t) => {
-          const x = tempToX(t);
+          const y = tempToY(t);
           return (
             <g key={t}>
-              <line x1={x} y1={topPad} x2={x} y2={height - bottomPad} stroke="currentColor" strokeOpacity="0.12" />
-              <text x={x} y={height - 6} textAnchor="middle" fontSize="11" fill="currentColor" opacity="0.7">{t}°C</text>
+              <line x1={leftPad} y1={y} x2={width - rightPad} y2={y} stroke="currentColor" strokeOpacity="0.12" />
+              <text x={leftPad - 8} y={y + 4} textAnchor="end" fontSize="11" fill="currentColor" opacity="0.7">{t}°C</text>
             </g>
           );
         })}
 
-        {points.map((p) => (
-          <text
-            key={`name-${p.name}`}
-            x={leftPad - 10}
-            y={p.y + 4}
-            textAnchor="end"
-            fontSize="11"
-            fill="currentColor"
-            opacity="0.85"
-          >
-            {p.name}
-          </text>
-        ))}
+        <line x1={leftPad} y1={topPad} x2={leftPad} y2={height - bottomPad} stroke="currentColor" strokeOpacity="0.2" />
+        <line x1={leftPad} y1={height - bottomPad} x2={width - rightPad} y2={height - bottomPad} stroke="currentColor" strokeOpacity="0.2" />
 
         <polyline
           points={polyline}
@@ -77,9 +72,21 @@ function TemperatureSvgChart({ data }) {
         />
 
         {points.map((p) => (
-          <g key={`dot-${p.name}-${p.temp}`}>
+          <g key={`${p.name}-${p.temp}`}>
             <circle cx={p.x} cy={p.y} r="4" fill="#00b8d4" />
-            <text x={p.x + 8} y={p.y - 8} fontSize="11" fill="currentColor" opacity="0.85">{p.temp}°C</text>
+            <text x={p.x} y={p.y - 10} textAnchor="middle" fontSize="11" fill="currentColor" opacity="0.85">{p.temp}°C</text>
+            <text
+              x={p.x}
+              y={height - bottomPad + 36}
+              textAnchor="end"
+              fontSize="10"
+              fill="currentColor"
+              opacity="0.85"
+              transform={`rotate(-35, ${p.x}, ${height - bottomPad + 36})`}
+            >
+              {truncateLabel(p.name, 18)}
+            </text>
+            <title>{p.name}</title>
           </g>
         ))}
       </svg>
@@ -142,7 +149,7 @@ export const Dashboard = () => {
   return (
     <div className="p-8 max-w-7xl mx-auto flex flex-col gap-6">
       <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold font-display">Real Time Status</h2>
+        <h2 className="text-2xl font-bold font-display">Dashboard</h2>
         <div className="text-sm text-muted">
           {beaconList.length} beacons · {isConnected ? 'Socket Connected' : 'Socket Disconnected'}
         </div>
@@ -151,13 +158,13 @@ export const Dashboard = () => {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="glass-panel p-6 lg:col-span-2">
           <h3 className="text-lg font-bold mb-1">Dashboard 1: Temperature Line Chart</h3>
-          <p className="text-xs text-muted mb-4">X 軸：Temperature (°C) · Y 軸：Beacon 名稱</p>
-          <div className="h-[340px]">
+          <p className="text-xs text-muted mb-4">X 軸：Beacon 名稱 · Y 軸：Temperature (°C)</p>
+          <div className="h-[380px]">
             <TemperatureSvgChart data={chartData} />
           </div>
         </div>
 
-        <div className="glass-panel p-6 min-h-[340px]">
+        <div className="glass-panel p-6 min-h-[380px]">
           <h3 className="text-lg font-bold mb-1">Dashboard 2</h3>
           <p className="text-sm text-muted">預留空框，待你提供下一步需求。</p>
         </div>

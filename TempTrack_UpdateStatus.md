@@ -111,3 +111,35 @@ git fetch origin
 git reset --hard origin/main
 docker compose up --build -d
 ```
+
+---
+
+## [2026-06-02] 修正圖表軸向並還原 Real Time Status 列表頁
+
+### 修改內容
+
+1. **圖表軸向修正**
+   - Dashboard 1 折線圖改為：**X 軸 = Beacon 名稱**、**Y 軸 = 溫度 (°C)**
+
+2. **還原先前 Dashboard（列表頁）**
+   - 新增 `RealTimeStatus.jsx`：恢復統計卡、搜尋框、Beacon 橫向列表
+   - 側欄分為兩項：
+     - `Dashboard` → `/`（三個 dashboard 區塊首頁）
+     - `Real Time Status` → `/real-time`（即時列表頁）
+
+### 影響檔案
+
+- `frontend/src/App.jsx`
+- `frontend/src/components/Dashboard.jsx`
+- `frontend/src/components/RealTimeStatus.jsx`（新增）
+
+### Ubuntu 更新步驟
+
+```bash
+cd ~/eLogbook
+docker compose down
+sudo chown -R $USER:$USER nodeapp
+git fetch origin
+git reset --hard origin/main
+docker compose up --build -d
+```

@@ -79,22 +79,67 @@ docker compose logs -f app
 
 ---
 
-## [2026-06-02] 首頁改版為三個 Dashboard
+## [2026-06-02] 首頁重構為三大 Dashboard
 
-### 修改方法
+### 修改內容
 
-1. 側欄名稱從 `Dashboard` 改為 `Real Time Status`
-2. Header 標題改為 `Real Time Status View`
-3. 首頁重構為三個 Dashboard 區塊
+1. **首頁名稱調整**
+   - 側欄原本 `Dashboard` 改為 `Real Time Status`
+   - Header 顯示改為 `Real Time Status View`
+
+2. **首頁版面重建**
+   - 重新設計首頁為 3 個 dashboard 區塊
    - Dashboard 1：溫度 Line Chart
-   - Dashboard 2：空白預留框
-   - Dashboard 3：空白預留框
-4. 第一個圖表規格：
+   - Dashboard 2、Dashboard 3：先建立空框（預留後續功能）
+
+3. **Line Chart 定義**
+   - 使用 `recharts` 建立折線圖
    - X 軸：Temperature (°C)
    - Y 軸：Beacon 名稱
-   - 僅繪製有溫度資料的 Beacon
+   - 僅顯示有溫度數據的 Beacon
 
 ### 影響檔案
 
 - `frontend/src/App.jsx`
 - `frontend/src/components/Dashboard.jsx`
+
+### Ubuntu 更新步驟
+
+```bash
+cd ~/eLogbook
+git fetch origin
+git reset --hard origin/main
+docker compose up --build -d
+```
+
+---
+
+## [2026-06-02] 修正圖表軸向並還原 Real Time Status 列表頁
+
+### 修改內容
+
+1. **圖表軸向修正**
+   - Dashboard 1 折線圖改為：**X 軸 = Beacon 名稱**、**Y 軸 = 溫度 (°C)**
+
+2. **還原先前 Dashboard（列表頁）**
+   - 新增 `RealTimeStatus.jsx`：恢復統計卡、搜尋框、Beacon 橫向列表
+   - 側欄分為兩項：
+     - `Dashboard` → `/`（三個 dashboard 區塊首頁）
+     - `Real Time Status` → `/real-time`（即時列表頁）
+
+### 影響檔案
+
+- `frontend/src/App.jsx`
+- `frontend/src/components/Dashboard.jsx`
+- `frontend/src/components/RealTimeStatus.jsx`（新增）
+
+### Ubuntu 更新步驟
+
+```bash
+cd ~/eLogbook
+docker compose down
+sudo chown -R $USER:$USER nodeapp
+git fetch origin
+git reset --hard origin/main
+docker compose up --build -d
+```

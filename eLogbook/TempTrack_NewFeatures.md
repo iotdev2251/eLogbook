@@ -38,6 +38,14 @@
 
 ## [2026-06-02] Dashboard 首頁三分區
 
-- **首頁命名更新**：側欄名稱改為 `Real Time Status`
-- **Dashboard 1**：新增溫度 Line Chart（X 軸溫度、Y 軸 Beacon 名稱）
-- **Dashboard 2 / 3**：建立空白圖表框，供後續功能填充
+- **首頁命名更新**：主選單 `Dashboard` 改為 `Real Time Status`
+- **新首頁架構**：首頁重構為三個 Dashboard 區塊
+- **Dashboard 1**：新增溫度 Line Chart（X 軸為溫度、Y 軸為 Beacon 名稱）
+- **Dashboard 2 / 3**：建立空白預留框，等待後續定義
+
+---
+
+## [2026-06-02] 導航與圖表軸向調整
+
+- **Dashboard 首頁**（`/`）：三個 dashboard 區塊；圖表 1 為 X=Beacon 名稱、Y=溫度
+- **Real Time Status**（`/real-time`）：還原即時 Beacon 列表（搜尋、統計卡、橫向資料列）

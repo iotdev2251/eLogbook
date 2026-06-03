@@ -2,9 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { Dashboard } from './components/Dashboard';
+import { RealTimeStatus } from './components/RealTimeStatus';
 import { Login } from './components/Login';
 import { Settings } from './components/Settings';
-import { LayoutDashboard, History, Settings as SettingsIcon, Bell, LogOut } from 'lucide-react';
+import { LayoutDashboard, History, Settings as SettingsIcon, Bell, LogOut, Radio } from 'lucide-react';
 
 axios.defaults.withCredentials = true;
 
@@ -47,9 +48,11 @@ function AppContent() {
     return user ? <Navigate to="/" replace /> : <Login onLogin={setUser} />;
   }
 
-  const activeTab = location.pathname.substring(1) || 'dashboard';
+  const path = location.pathname.replace(/^\//, '');
+  const activeTab = path === '' ? 'dashboard' : path.split('/')[0];
   const tabTitleMap = {
-    dashboard: 'Real Time Status',
+    dashboard: 'Dashboard',
+    'real-time': 'Real Time Status',
     history: 'History',
     alerts: 'Alerts',
     settings: 'Settings',
@@ -71,9 +74,15 @@ function AppContent() {
         <div className="flex flex-col gap-2">
           <NavItem
             icon={<LayoutDashboard size={20} />}
-            label="Real Time Status"
+            label="Dashboard"
             active={activeTab === 'dashboard'}
             onClick={() => navigate('/')}
+          />
+          <NavItem
+            icon={<Radio size={20} />}
+            label="Real Time Status"
+            active={activeTab === 'real-time'}
+            onClick={() => navigate('/real-time')}
           />
           <NavItem
             icon={<History size={20} />}
@@ -129,6 +138,7 @@ function AppContent() {
 
         <Routes>
           <Route path="/" element={<Dashboard />} />
+          <Route path="/real-time" element={<RealTimeStatus />} />
           <Route path="/settings" element={<Settings currentUser={user} />} />
           <Route path="/history" element={<PlaceholderView name="History" />} />
           <Route path="/alerts" element={<PlaceholderView name="Alerts" />} />
