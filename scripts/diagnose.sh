@@ -18,9 +18,18 @@ echo "=== docker compose ps ==="
 docker compose ps
 echo ""
 
-echo "=== app logs (last 50) ==="
-docker compose logs app --tail 50 2>/dev/null || echo "(no app logs)"
+echo "=== app logs (last 80) ==="
+docker compose logs app --tail 80 2>/dev/null || echo "(no app logs)"
 echo ""
+
+APP_STATUS=$(docker compose ps --format '{{.Status}}' app 2>/dev/null | head -1)
+if echo "$APP_STATUS" | grep -qE 'Restarting|starting'; then
+  echo "⚠️  app may be crash-looping. Common fix:"
+  echo "    bash scripts/fix-permissions.sh"
+  echo "    git fetch origin && git reset --hard origin/main"
+  echo "    docker compose up -d --build"
+  echo ""
+fi
 
 echo "=== mqtt-broker logs (last 15) ==="
 docker compose logs mqtt-broker --tail 15 2>/dev/null || true

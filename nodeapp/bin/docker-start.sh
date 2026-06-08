@@ -6,42 +6,54 @@ cd /app
 chmod +x bin/ensure-runtime-env.sh 2>/dev/null || true
 . ./bin/ensure-runtime-env.sh
 
-# Backend dependencies (image may already include node_modules)
+# Backend dependencies (image already includes node_modules)
 if [ ! -d node_modules ] || [ ! -f node_modules/.install-stamp ]; then
   echo "[docker-start] Installing backend dependencies..."
   npm install
   touch node_modules/.install-stamp
 fi
 
-# Frontend build when source is mounted (dev/deploy with volumes)
-if [ -f /frontend/package.json ]; then
-  cd /frontend
-  if [ ! -d node_modules ] || [ ! -f node_modules/.install-stamp ]; then
-    echo "[docker-start] Installing frontend dependencies..."
-    npm install
-    touch node_modules/.install-stamp
-  fi
+# Frontend rebuild ONLY when /frontend is bind-mounted (dev) or FORCE_FRONTEND_BUILD=1
+FRONTEND_MOUNTED=0
+if mountpoint -q /frontend 2>/dev/null; then
+  FRONTEND_MOUNTED=1
+fi
 
-  NEED_BUILD=0
-  if [ ! -f /app/public/index.html ]; then
-    NEED_BUILD=1
-  elif [ "$FORCE_FRONTEND_BUILD" = "1" ]; then
-    NEED_BUILD=1
-  elif find /frontend/src -newer /app/public/index.html -print -quit 2>/dev/null | grep -q .; then
-    NEED_BUILD=1
-  fi
-
-  if [ "$NEED_BUILD" = "1" ]; then
-    echo "[docker-start] Building frontend..."
-    mkdir -p /app/public
-    if ! VITE_BUILD_OUT_DIR=/app/public npm run build; then
-      echo "[docker-start] ERROR: frontend build failed"
-      exit 1
+if [ "$FRONTEND_MOUNTED" = "1" ] || [ "$FORCE_FRONTEND_BUILD" = "1" ]; then
+  if [ -f /frontend/package.json ]; then
+    cd /frontend
+    if [ ! -d node_modules ] || [ ! -f node_modules/.install-stamp ]; then
+      echo "[docker-start] Installing frontend dependencies..."
+      npm install
+      touch node_modules/.install-stamp
     fi
-  else
-    echo "[docker-start] Frontend build up to date, skipping."
+
+    NEED_BUILD=0
+    if [ ! -f /app/public/index.html ]; then
+      NEED_BUILD=1
+    elif [ "$FORCE_FRONTEND_BUILD" = "1" ]; then
+      NEED_BUILD=1
+    elif [ "$FRONTEND_MOUNTED" = "1" ] && find /frontend/src -newer /app/public/index.html -print -quit 2>/dev/null | grep -q .; then
+      NEED_BUILD=1
+    fi
+
+    if [ "$NEED_BUILD" = "1" ]; then
+      echo "[docker-start] Building frontend..."
+      mkdir -p /app/public
+      if ! VITE_BUILD_OUT_DIR=/app/public npm run build; then
+        echo "[docker-start] ERROR: frontend build failed"
+        exit 1
+      fi
+    else
+      echo "[docker-start] Frontend build up to date, skipping."
+    fi
+    cd /app
   fi
-  cd /app
+elif [ -f /app/public/index.html ]; then
+  echo "[docker-start] Using frontend baked into image."
+else
+  echo "[docker-start] ERROR: /app/public/index.html missing — rebuild image with: docker compose build --no-cache app"
+  exit 1
 fi
 
 mkdir -p /app/public

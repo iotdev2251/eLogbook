@@ -11,7 +11,11 @@ if ! [ -x "$(command -v docker)" ]; then
   exit 1
 fi
 
-# 2. Setup Environment Files
+# 2. Fix root-owned build artifacts (blocks git pull)
+bash "$APP_DIR/scripts/fix-permissions.sh" 2>/dev/null || true
+chmod +x "$APP_DIR/scripts/fix-permissions.sh" 2>/dev/null || true
+
+# 3. Setup Environment Files
 echo "📝 Checking environment files..."
 if [ ! -f "$APP_DIR/.env" ]; then
     echo "⚠️  Root .env missing, copying from .env.default..."
@@ -74,6 +78,7 @@ chmod +x "$APP_DIR/scripts/repair-env.sh" 2>/dev/null || true
 chmod +x "$APP_DIR/nodeapp/bin/docker-start.sh" 2>/dev/null || true
 chmod +x "$APP_DIR/nodeapp/bin/ensure-runtime-env.sh" 2>/dev/null || true
 chmod +x "$APP_DIR/scripts/diagnose.sh" 2>/dev/null || true
+chmod +x "$APP_DIR/scripts/fix-permissions.sh" 2>/dev/null || true
 
 # Mosquitto data/log must be writable by UID 1883 inside the container
 mkdir -p "$APP_DIR/mosquitto/data" "$APP_DIR/mosquitto/log"
@@ -81,16 +86,16 @@ sudo rm -f "$APP_DIR/mosquitto/config/passwd" 2>/dev/null || rm -f "$APP_DIR/mos
 sudo chown -R 1883:1883 "$APP_DIR/mosquitto/data" "$APP_DIR/mosquitto/log" 2>/dev/null \
   || chmod -R 777 "$APP_DIR/mosquitto/data" "$APP_DIR/mosquitto/log"
 
-# 3. Stop existing containers
+# 4. Stop existing containers
 echo "🛑 Stopping existing services..."
 docker compose -f "$APP_DIR/docker-compose.yml" down
 
-# 4. Build and Start
+# 5. Build and Start
 echo "🏗️  Building and starting containers..."
 # First deploy after package.json changes: set FORCE_FRONTEND_BUILD=1
 docker compose -f "$APP_DIR/docker-compose.yml" up --build -d
 
-# 5. Status check
+# 6. Status check
 echo "📊 Deployment complete! Current status:"
 docker compose -f "$APP_DIR/docker-compose.yml" ps
 

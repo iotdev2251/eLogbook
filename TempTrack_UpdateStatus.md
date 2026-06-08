@@ -154,6 +154,36 @@ docker compose up --build -d
 
 ---
 
+## [2026-06-08] 修復 crash loop + git pull 權限錯誤
+
+### 原因
+
+1. `nodeapp/public` 被 Docker 以 root 建立，`git reset` 失敗，伺服器仍跑舊版 code
+2. Docker image 內有 `/frontend`，`docker-start` 每次啟動都跑 `npm install` → 容器 crash loop
+
+### 修復
+
+- 啟動時跳過 frontend 安裝（使用 image 內已建置的 `public`）
+- 從 git 移除 `nodeapp/public` 追蹤
+- 新增 `scripts/fix-permissions.sh`
+
+### Ubuntu（請依序執行）
+
+```bash
+cd ~/eLogbook
+docker compose down
+bash scripts/fix-permissions.sh
+git fetch origin && git reset --hard origin/main
+docker compose up -d --build
+sleep 15
+bash scripts/diagnose.sh
+docker compose logs app --tail 30
+```
+
+瀏覽器：**https://10.0.56.130:3011**
+
+---
+
 ## [2026-06-08] 改回 HTTPS UI + 修復容器無法啟動
 
 ### 變更
