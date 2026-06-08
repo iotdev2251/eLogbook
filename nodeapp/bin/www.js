@@ -39,18 +39,23 @@ const httpsServer = createServerHttps(credentials, app);
  * Add Socket.IO
  */
 const io = new Server(httpsServer)
-myApp.init(io)
-io.on("connection", (socket) => {
-  console.log("Socket connected: " + socket.id)
+
+async function start() {
+  await myApp.init(io)
+
+  io.on("connection", (socket) => {
+    console.log("Socket connected: " + socket.id)
+  })
+
+  httpsServer.listen(port);
+  httpsServer.on('error', onError);
+  httpsServer.on('listening', onListening);
+}
+
+start().catch((err) => {
+  console.error('Failed to start server:', err)
+  process.exit(1)
 })
-
-/**
- * Listen on provided port, on all network interfaces.
- */
-
-httpsServer.listen(port);
-httpsServer.on('error', onError);
-httpsServer.on('listening', onListening);
 
 /**
  * Normalize a port into a number, string, or false.

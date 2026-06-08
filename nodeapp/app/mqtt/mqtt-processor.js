@@ -1,6 +1,7 @@
 import { loggerFactory } from '../../config/logger.js';
 import { BEACON_STATUS } from '../beacon/beacon-status.js'
 import { mapBeaconForClient } from '../beacon/beacon-api.js'
+import { normalizeMac } from '../beacon/mac-utils.js'
 import { parseMfrPayload } from './mfr-parser.js'
 import { isPlausibleSensorTemp, TEMP_UNKNOWN } from '../beacon/sensor-values.js'
 
@@ -20,45 +21,63 @@ class MqttProcessor{
     }
 
     async process(json, gatewayMac){
-        json.forEach(async (element) => {
+        if (!Array.isArray(json)) {
+            return
+        }
+
+        const gateway = this._beaconRepository.getGateway(gatewayMac)
+        if (!gateway) {
+            logger.warn('Unknown gateway MAC: %s', gatewayMac)
+            return
+        }
+
+        for (const element of json) {
             const beacon = this._beaconRepository.getBeacon(element.mac)
             if (beacon != undefined) {
-                await this._onBeaconData(element, beacon, this._beaconRepository.getGateway(gatewayMac))
+                await this._onBeaconData(element, beacon, gateway)
             }
-        });
+        }
     }
 
     async _onBeaconData(updatedData, beacon, gateway) {
         const mfr = updatedData.MFR
         if (mfr == undefined) return;
 
+        if (!gateway) {
+            logger.warn('Skipping beacon update without gateway: %s', updatedData.mac)
+            return
+        }
+
         const parsed = parseMfrPayload(mfr, updatedData.mac)
-        const rssi = parseInt(updatedData.rssi) || 1234
-            
+        const rssiParsed = parseInt(updatedData.rssi, 10)
+        const rssi = Number.isFinite(rssiParsed) ? rssiParsed : null
+
         const sometimesBefore = new Date()
         sometimesBefore.setSeconds(sometimesBefore.getSeconds() - 2)
 
-        const shouldUpdate = gateway == beacon.gateway 
+        const sameGateway = gateway.id === beacon.gateway_id
+        const shouldUpdate = sameGateway
             || beacon.gateway == null
             || new Date(beacon.report_at) < sometimesBefore
-            || rssi > beacon.rssi
+            || (rssi != null && (beacon.rssi == null || rssi > beacon.rssi))
 
         if(shouldUpdate){
             beacon.name = updatedData.name
-            beacon.mac_addr = updatedData.mac
+            beacon.mac_addr = normalizeMac(updatedData.mac)
             if (parsed.temp != null) {
                 beacon.temp = parsed.temp
             } else if (
                 parsed.profile === 'minew-info' &&
                 !isPlausibleSensorTemp(beacon.temp)
             ) {
-                // Drop stale wrong readings (e.g. 58.8°C from old parser)
                 beacon.temp = TEMP_UNKNOWN
             }
             if (parsed.battery != null) {
                 beacon.battery = parsed.battery
             }
-            beacon.rssi = rssi
+            if (rssi != null) {
+                beacon.rssi = rssi
+            }
             beacon.gateway = gateway
             beacon.gateway_id = gateway.id
             beacon.report_at = new Date().toISOString()
@@ -94,12 +113,13 @@ class MqttProcessor{
             const beacon = allBeacons[beaconMacAddr]
             if (beacon.status == 'in') {
                 const reportAt = new Date(beacon.report_at)
-                
+
                 if(reportAt < expired){
-                    if(beacon.gateway.check_point){
+                    if (!beacon.gateway) {
+                        beacon.status = BEACON_STATUS.ALERT
+                    } else if (beacon.gateway.check_point) {
                         beacon.status = BEACON_STATUS.OUT
-                    }
-                    else{
+                    } else {
                         beacon.status = BEACON_STATUS.ALERT
                     }
                     beacon.is_changed = true

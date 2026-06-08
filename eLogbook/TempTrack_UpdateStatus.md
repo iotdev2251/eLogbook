@@ -154,6 +154,53 @@ docker compose up --build -d
 
 ---
 
+## [2026-06-03] 第一階段穩定性修復
+
+### 修改內容
+
+1. **History API 路由**
+   - `/history/b/:mac` 改為優先於 `/:page`，修正單一 Beacon 歷史查詢失效
+
+2. **MAC 地址統一**
+   - 新增 `mac-utils.js`，MQTT / Repository / API 一律正規化為大寫
+
+3. **MQTT 處理**
+   - Gateway 為 null 時不再 crash
+   - Gateway 比較改為 `gateway.id === beacon.gateway_id`
+   - 無效 RSSI 不再預設 1234
+   - `forEach(async)` 改為 `for...of` 並 await
+   - 惡意/錯誤 MQTT JSON 以 try/catch 隔離
+
+4. **資料庫寫入**
+   - `updateBeacon` / `insertHistory` 失敗時 throw，不再靜默吞錯
+   - 寫入失敗時保留 `is_changed`；無 gateway 的 Beacon 延後寫入
+
+5. **啟動順序**
+   - `await myApp.init(io)` 完成後才 `listen`
+
+### 影響檔案
+
+- `nodeapp/app/beacon/mac-utils.js`（新增）
+- `nodeapp/app/beacon/beacon-repository.js`
+- `nodeapp/app/beacon/beacon-datastore.js`
+- `nodeapp/app/beacon/beacon-api.js`
+- `nodeapp/app/history/history-router.js`
+- `nodeapp/app/mqtt/mqtt-processor.js`
+- `nodeapp/app/mqtt/mqtt-client.js`
+- `nodeapp/bin/www.js`
+
+### Ubuntu 更新步驟
+
+```bash
+cd ~/eLogbook
+docker compose down
+sudo chown -R $USER:$USER nodeapp
+git fetch origin && git reset --hard origin/main
+docker compose up --build -d
+```
+
+---
+
 ## [2026-06-02] 修正圖表軸向並還原 Real Time Status 列表頁
 
 ### 修改內容

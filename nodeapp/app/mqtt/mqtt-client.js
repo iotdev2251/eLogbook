@@ -1,6 +1,7 @@
 import mqtt from 'mqtt';
 import { c } from '../../config/constant.js'
 import { loggerFactory } from '../../config/logger.js';
+import { normalizeMac } from '../beacon/mac-utils.js';
 
 const logger = loggerFactory('mqtt')
 
@@ -48,9 +49,13 @@ class MyMqttClient{
         })
 
         client.on('message', async (topic, payload) => {
-            const j = JSON.parse(payload)
-            if (j != null) {
-                this._mqttProcessor.process(j, this._extractMacAddressFromTopic(topic))
+            try {
+                const j = JSON.parse(payload)
+                if (j != null) {
+                    await this._mqttProcessor.process(j, this._extractMacAddressFromTopic(topic))
+                }
+            } catch (e) {
+                logger.error('Invalid MQTT payload on %s: %s', topic, e.message)
             }
         })
 
@@ -63,7 +68,7 @@ class MyMqttClient{
 
         const mac = topic.substr(startPos, endPos)
 
-        return mac
+        return normalizeMac(mac)
     }
 }
 

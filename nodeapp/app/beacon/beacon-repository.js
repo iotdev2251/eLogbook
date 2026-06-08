@@ -1,5 +1,6 @@
 import { loggerFactory } from '../../config/logger.js';
 import { BEACON_STATUS } from './beacon-status.js';
+import { normalizeMac } from './mac-utils.js';
 
 const logger = loggerFactory('beacon-service')
 
@@ -19,22 +20,22 @@ class BeaconRepository {
         const allBeacons = await this._beaconDataStore.getAllBeacons()
         this._beacons = {}
         allBeacons.forEach(b => {
-            b.mac_addr = b.mac_addr.toUpperCase()
+            b.mac_addr = normalizeMac(b.mac_addr)
             this._beacons[b.mac_addr] = b
         })
 
         const allGateways = await this._beaconDataStore.getAllGateways()
         this._gateways = {}
         allGateways.forEach(g => {
-            g.mac_addr = g.mac_addr.toUpperCase()
-            this._gateways[g.mac_addr.toUpperCase()] = g
+            g.mac_addr = normalizeMac(g.mac_addr)
+            this._gateways[g.mac_addr] = g
         })
     }
 
     _prepareNewBeacon(mac_addr){
         const beacon = {
             nickname: "?",
-            mac_addr: mac_addr.toUpperCase(),
+            mac_addr: normalizeMac(mac_addr),
             report_at: new Date().toISOString(),
             rssi: 0,
             status: BEACON_STATUS.IN
@@ -46,7 +47,7 @@ class BeaconRepository {
     }
 
     getBeacon(mac_addr) {
-        const mac_address = mac_addr || ""
+        const mac_address = normalizeMac(mac_addr)
         let beacon = this._beacons[mac_address]
 
         if (beacon == undefined && this._isAccceptedUnknownBeacon(mac_address)) {
@@ -57,10 +58,10 @@ class BeaconRepository {
     }
 
     _isAccceptedUnknownBeacon(mac_addr) {
+        const mac = normalizeMac(mac_addr)
         for(let i=0; i < this._beaconPrefixes.length; i++){
-            const prefix = this._beaconPrefixes[i]
-            if(prefix.length > 0 && mac_addr.startsWith(prefix)){
-                console.log("Matched !", mac_addr, prefix)
+            const prefix = this._beaconPrefixes[i].trim().toUpperCase()
+            if(prefix.length > 0 && mac.startsWith(prefix)){
                 return true
             }
         }
@@ -68,29 +69,44 @@ class BeaconRepository {
     }
 
     getGateway(mac_addr){
-        return this._gateways[mac_addr]
+        return this._gateways[normalizeMac(mac_addr)]
     }
 
     async writeToDb() {
         let changed = 0
+        let failed = 0
         const history = []
         const startTime = new Date()
         logger.debug("Start Writing DB" + startTime.toLocaleString())
         for (const beaconMacAddr in this._beacons) {
             const beacon = this._beacons[beaconMacAddr]
-            if (beacon.is_changed) {
-                const r = await this._beaconDataStore.updateBeacon(beacon)
-                
+            if (!beacon.is_changed) {
+                continue
+            }
+
+            if (!beacon.gateway?.id) {
+                logger.warn('Deferring DB write for %s: no gateway assigned', beacon.mac_addr)
+                continue
+            }
+
+            try {
+                await this._beaconDataStore.updateBeacon(beacon)
                 changed++
                 beacon.is_changed = false
 
-                history.push(this._convertToHistory(beacon))
+                const historyRow = this._convertToHistory(beacon)
+                if (historyRow) {
+                    history.push(historyRow)
+                }
+            } catch (e) {
+                failed++
+                logger.error('Failed to persist beacon %s: %s', beacon.mac_addr, e.message)
             }
         }
         if (changed > 0) {
-            logger.info("Updated Records: %d, startTime: %s, time spent: %d", changed, startTime.toLocaleString(), (new Date() - startTime)/1000)
+            logger.info("Updated Records: %d, failed: %d, startTime: %s, time spent: %d", changed, failed, startTime.toLocaleString(), (new Date() - startTime)/1000)
         }
-        else {
+        else if (failed === 0) {
             logger.info("No Change")
         }
 
@@ -98,17 +114,25 @@ class BeaconRepository {
     }
 
     async _writeHistory(history) {
-        if (history.length > 0) {
+        if (history.length === 0) {
+            return 0
+        }
+
+        try {
             const i = await this._beaconDataStore.insertHistory(history)
             logger.info("Insert History: %d", i.count)
             return i.count
-        }
-        else{
+        } catch (e) {
+            logger.error('Failed to insert history (%d rows): %s', history.length, e.message)
             return 0
         }
     }
 
     _convertToHistory(beacon){
+        if (!beacon.gateway?.mac_addr || !beacon.gateway?.name) {
+            return null
+        }
+
         return {
             name: beacon.name,
             nickname: beacon.nickname,
@@ -132,8 +156,7 @@ class BeaconRepository {
     }
 
     getExistingBeacon(mac_addr) {
-        const mac = (mac_addr || '').toUpperCase()
-        return this._beacons[mac]
+        return this._beacons[normalizeMac(mac_addr)]
     }
 
     async setBeaconNickname(beacon, nickname) {
@@ -144,7 +167,7 @@ class BeaconRepository {
     }
 
     async updateGatewayDisplayName(gatewayMac, name) {
-        const mac = (gatewayMac || '').toUpperCase()
+        const mac = normalizeMac(gatewayMac)
         const gateway = this._gateways[mac]
         if (!gateway) {
             return null

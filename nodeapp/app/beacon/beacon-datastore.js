@@ -40,10 +40,7 @@ class BeaconDataStore {
         }
         catch (e) {
             logger.error(e)
-            return {
-                "msg": "Error in updating beacon data",
-                "error": e
-            }
+            throw e
         }
     }
 
@@ -56,10 +53,7 @@ class BeaconDataStore {
         }
         catch (e) {
             logger.error(e)
-            return {
-                "msg": "Error in updating beacon data",
-                "error": e
-            }
+            throw e
         }
     }
 

@@ -58,3 +58,12 @@
 - **Beacon 顯示名**：存於 `nickname`（不受 MQTT 廣播名覆寫）
 - **Gateway 顯示名**：更新 `gateway.name`（同一 gateway 下所有 Beacon 一併更新）
 - **版面**：Beacon 資料列改為格狀排版，內容留在卡片內、不橫向捲動
+
+---
+
+## [2026-06-03] 後端穩定性修復（第一階段）
+
+- History 單一 Beacon 查詢路由修正
+- MAC 地址全鏈路正規化（大寫）
+- MQTT：Gateway null 防護、ID 比較、RSSI 修正、非同步處理修正
+- DB 寫入失敗不再靜默丟資料；服務 init 完成後才監聽埠

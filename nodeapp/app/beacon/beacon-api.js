@@ -56,7 +56,7 @@ class BeaconApi{
         if(mac_addr == null || mac_addr.length == 0){
             return null
         }
-        const beacon = this._beaconRepository.getAllBeacons()[mac_addr]
+        const beacon = this._beaconRepository.getExistingBeacon(mac_addr)
         return mapBeaconForClient(beacon)
     }
 
