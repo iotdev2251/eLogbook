@@ -154,6 +154,33 @@ docker compose up --build -d
 
 ---
 
+## [2026-06-03] 修復升級後無法啟動
+
+### 原因
+
+1. Mosquitto `docker-entrypoint.sh` 未傳入 `mosquitto -c` 參數，broker 無法正常啟動
+2. 僅 `git pull` + `compose up` 時根目錄 `.env` 可能沒有 `JWT_SECRET`，app 拒絕啟動
+
+### 修復
+
+- 修正 Mosquitto entrypoint
+- 新增 `nodeapp/bin/ensure-runtime-env.sh`：啟動前自動補齊 `JWT_SECRET` / MQTT 帳密並寫入 `nodeapp/.env`
+- `docker-compose` 為 app / mqtt 加上預設環境變數與 `restart: on-failure`
+
+### Ubuntu 更新
+
+```bash
+cd ~/eLogbook
+docker compose down
+sudo chown -R $USER:$USER nodeapp
+git fetch origin && git reset --hard origin/main
+bash scripts/deploy.sh
+```
+
+瀏覽器請用 **https://10.0.56.130:3011**（不是 `http://`）
+
+---
+
 ## [2026-06-03] 第二階段安全強化
 
 ### 修改內容

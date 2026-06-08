@@ -52,6 +52,17 @@ MQTT_USER=${MQTT_USER}
 MQTT_PASSWORD=${MQTT_PASSWORD}
 JWT_SECRET=${JWT_SECRET}
 EOF
+else
+    # Keep nodeapp/.env in sync with root secrets after upgrades
+    for pair in "JWT_SECRET=${JWT_SECRET}" "MQTT_USER=${MQTT_USER}" "MQTT_PASSWORD=${MQTT_PASSWORD}"; do
+        key="${pair%%=*}"
+        val="${pair#*=}"
+        if grep -q "^${key}=" "$APP_DIR/nodeapp/.env" 2>/dev/null; then
+            sed -i "s|^${key}=.*|${key}=${val}|" "$APP_DIR/nodeapp/.env"
+        else
+            echo "${key}=${val}" >> "$APP_DIR/nodeapp/.env"
+        fi
+    done
 fi
 
 chmod +x "$APP_DIR/mosquitto/config/docker-entrypoint.sh" 2>/dev/null || true
