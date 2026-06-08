@@ -4,6 +4,26 @@
 
 ---
 
+## [2026-06-08] Dashboard 三區圖表
+
+### 修改內容
+
+1. **Dashboard 1**：溫度改為 **Bar Chart**（X=Beacon 名稱、Y=溫度 °C）
+2. **Dashboard 2**：**圓餅圖** — 各 Location（Gateway）Beacon 數量
+3. **Dashboard 3**：**橫向分段條圖** — 每列 Location，色塊為所屬 Beacon
+
+### Ubuntu 更新
+
+```bash
+cd ~/eLogbook
+git fetch origin && git reset --hard origin/main
+docker compose up -d --build
+```
+
+瀏覽器 **Ctrl+F5** 開 https://\<server-ip\>:3011
+
+---
+
 ## [2026-06-01] 溫度解析修正、UI 與部署結構調整
 
 ### 修改內容

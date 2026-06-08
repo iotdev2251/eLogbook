@@ -36,12 +36,20 @@
 
 ---
 
+## [2026-06-08] Dashboard 三區圖表
+
+- **Dashboard 1**：溫度 **Bar Chart**（X=Beacon 名稱、Y=溫度 °C）
+- **Dashboard 2**：**圓餅圖** — 各 Location（Gateway）的 Beacon 數量
+- **Dashboard 3**：**橫向分段條圖** — 每列一個 Location，色塊標示所屬 Beacon
+
+---
+
 ## [2026-06-02] Dashboard 首頁三分區
 
 - **首頁命名更新**：主選單 `Dashboard` 改為 `Real Time Status`
 - **新首頁架構**：首頁重構為三個 Dashboard 區塊
-- **Dashboard 1**：新增溫度 Line Chart（X 軸為溫度、Y 軸為 Beacon 名稱）
-- **Dashboard 2 / 3**：建立空白預留框，等待後續定義
+- **Dashboard 1**：溫度圖表（X=Beacon、Y=溫度）
+- **Dashboard 2 / 3**：預留區塊（已於 2026-06-08 實作）
 
 ---
 
