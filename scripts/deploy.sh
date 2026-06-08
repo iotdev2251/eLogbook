@@ -78,6 +78,7 @@ docker compose -f "$APP_DIR/docker-compose.yml" down
 
 # 4. Build and Start
 echo "🏗️  Building and starting containers..."
+# First deploy after package.json changes: set FORCE_FRONTEND_BUILD=1
 docker compose -f "$APP_DIR/docker-compose.yml" up --build -d
 
 # 5. Status check

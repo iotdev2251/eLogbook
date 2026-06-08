@@ -48,6 +48,7 @@ services:
         - TZ=Asia/Hong_Kong
         - MQTT_USER=${MQTT_USER:-temptrack}
         - MQTT_PASSWORD=${MQTT_PASSWORD:-changeme_mqtt_please_rotate}
+        - FORCE_FRONTEND_BUILD=${FORCE_FRONTEND_BUILD:-0}
       command: ["/bin/sh", "bin/docker-start.sh"]
       restart: on-failure
       ports:

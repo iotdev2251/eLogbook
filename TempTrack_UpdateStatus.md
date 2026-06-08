@@ -154,6 +154,31 @@ docker compose up --build -d
 
 ---
 
+## [2026-06-08] 修復 Docker 建置 npm ci 失敗
+
+### 原因
+
+`package-lock.json` 與 `package.json` 不同步（新增 vitest 後未更新 lock），`npm ci` 導致 image 建置失敗、app 無法啟動。
+
+### 修復
+
+- Dockerfile 改為 `npm install`（容許 lock 不同步）
+- `FORCE_FRONTEND_BUILD` 傳入 app 容器
+
+### Ubuntu
+
+```bash
+cd ~/eLogbook
+git fetch origin && git reset --hard origin/main
+docker compose down
+docker compose up -d --build
+docker compose ps
+```
+
+瀏覽器：**https://10.0.56.130:3011**
+
+---
+
 ## [2026-06-08] 第四階段：部署優化與 CI
 
 ### 修改內容

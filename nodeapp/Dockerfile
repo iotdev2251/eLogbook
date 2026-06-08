@@ -1,8 +1,8 @@
 # Stage 1 — frontend dependencies
 FROM node:18-bullseye-slim AS frontend-deps
 WORKDIR /frontend
-COPY frontend/package.json frontend/package-lock.json ./
-RUN npm ci
+COPY frontend/package.json frontend/package-lock.json* ./
+RUN npm install
 
 # Stage 2 — frontend production build (baked into image)
 FROM frontend-deps AS frontend-build
