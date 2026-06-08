@@ -36,11 +36,11 @@ services:
       entrypoint: ["/bin/sh", "/mosquitto/config/docker-entrypoint.sh"]
       restart: on-failure
       healthcheck:
-        test: ["CMD-SHELL", "mosquitto_sub -h 127.0.0.1 -p 1883 -t '$$SYS/broker/version' -C 1 -W 3"]
+        test: ["CMD-SHELL", "mosquitto_pub -h 127.0.0.1 -p 1883 -t healthcheck/ping -m 1 -q 0"]
         interval: 10s
         timeout: 5s
         retries: 5
-        start_period: 15s
+        start_period: 10s
 
     app:
       build:

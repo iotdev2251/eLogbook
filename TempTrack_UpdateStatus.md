@@ -154,6 +154,29 @@ docker compose up --build -d
 
 ---
 
+## [2026-06-08] 修復 MQTT broker unhealthy
+
+### 原因
+
+Healthcheck 訂閱 `$SYS/broker/version`，但 Mosquitto 預設 `sys_interval=0` 不發布 `$SYS` 訊息 → broker 一直被判 unhealthy → app 無法啟動。
+
+### 修復
+
+- Healthcheck 改為 `mosquitto_pub` 測試連線
+- `mosquitto.conf` 加入 `sys_interval 10`
+
+### Ubuntu
+
+```bash
+cd ~/eLogbook
+git fetch origin && git reset --hard origin/main
+docker compose down
+docker compose up -d
+docker compose ps
+```
+
+---
+
 ## [2026-06-08] 修復 Beacon 資料不即時更新
 
 ### 原因
