@@ -69,6 +69,7 @@ else
 fi
 
 chmod +x "$APP_DIR/mosquitto/config/docker-entrypoint.sh" 2>/dev/null || true
+chmod +x "$APP_DIR/scripts/repair-env.sh" 2>/dev/null || true
 
 # Mosquitto data/log must be writable by UID 1883 inside the container
 mkdir -p "$APP_DIR/mosquitto/data" "$APP_DIR/mosquitto/log"
