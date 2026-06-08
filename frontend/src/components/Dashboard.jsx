@@ -5,7 +5,12 @@ import { beaconDisplayName, gatewayDisplayName } from '../utils/beaconDisplay';
 const chartMinTemp = 10;
 const chartMaxTemp = 45;
 
-const CHART_COLORS = [
+const GATEWAY_COLORS = [
+  '#00b8d4', '#7c4dff', '#ff6d00', '#00c853', '#d500f9',
+  '#2962ff', '#c62828', '#00897b', '#f9a825', '#5e35b1',
+];
+
+const SEGMENT_COLORS = [
   '#00b8d4', '#7c4dff', '#ff6d00', '#00c853', '#d500f9',
   '#2962ff', '#c62828', '#00897b', '#f9a825', '#5e35b1',
 ];
@@ -103,16 +108,51 @@ function polarToCartesian(cx, cy, r, angleDeg) {
   return { x: cx + r * Math.cos(rad), y: cy + r * Math.sin(rad) };
 }
 
-function describeArc(cx, cy, r, startAngle, endAngle) {
-  const start = polarToCartesian(cx, cy, r, endAngle);
-  const end = polarToCartesian(cx, cy, r, startAngle);
-  const largeArc = endAngle - startAngle <= 180 ? 0 : 1;
-  return `M ${cx} ${cy} L ${start.x} ${start.y} A ${r} ${r} 0 ${largeArc} 0 ${end.x} ${end.y} Z`;
+/** Donut segment; handles full 360° rings (single gateway). */
+function describeDonutSegment(cx, cy, rOuter, rInner, startAngle, endAngle) {
+  const sweep = endAngle - startAngle;
+  if (sweep >= 359.999) {
+    return [
+      `M ${cx - rOuter} ${cy}`,
+      `A ${rOuter} ${rOuter} 0 1 1 ${cx + rOuter} ${cy}`,
+      `A ${rOuter} ${rOuter} 0 1 1 ${cx - rOuter} ${cy}`,
+      `M ${cx - rInner} ${cy}`,
+      `A ${rInner} ${rInner} 0 1 0 ${cx + rInner} ${cy}`,
+      `A ${rInner} ${rInner} 0 1 0 ${cx - rInner} ${cy}`,
+      'Z',
+    ].join(' ');
+  }
+
+  const startOuter = polarToCartesian(cx, cy, rOuter, startAngle);
+  const endOuter = polarToCartesian(cx, cy, rOuter, endAngle);
+  const startInner = polarToCartesian(cx, cy, rInner, endAngle);
+  const endInner = polarToCartesian(cx, cy, rInner, startAngle);
+  const largeArc = sweep > 180 ? 1 : 0;
+
+  return [
+    `M ${startOuter.x} ${startOuter.y}`,
+    `A ${rOuter} ${rOuter} 0 ${largeArc} 1 ${endOuter.x} ${endOuter.y}`,
+    `L ${startInner.x} ${startInner.y}`,
+    `A ${rInner} ${rInner} 0 ${largeArc} 0 ${endInner.x} ${endInner.y}`,
+    'Z',
+  ].join(' ');
 }
 
-/** 各 Location（Gateway）的 Beacon 數量 */
-function LocationPieChart({ slices }) {
-  const total = slices.reduce((sum, s) => sum + s.count, 0);
+function beaconShade(baseHex, index, total) {
+  if (total <= 1) return baseHex;
+  const t = 0.45 + (index / Math.max(total - 1, 1)) * 0.45;
+  const r = parseInt(baseHex.slice(1, 3), 16);
+  const g = parseInt(baseHex.slice(3, 5), 16);
+  const b = parseInt(baseHex.slice(5, 7), 16);
+  const mix = (c) => Math.round(c * t + 255 * (1 - t));
+  return `rgb(${mix(r)}, ${mix(g)}, ${mix(b)})`;
+}
+
+/**
+ * 雙層圓餅：內圈 = Gateway，外圈 = 該 Gateway 內的 Beacon
+ */
+function GatewayBeaconPieChart({ groups }) {
+  const total = groups.reduce((sum, g) => sum + g.beacons.length, 0);
 
   if (total === 0) {
     return (
@@ -122,41 +162,75 @@ function LocationPieChart({ slices }) {
     );
   }
 
-  const cx = 120;
-  const cy = 120;
-  const r = 88;
+  const cx = 130;
+  const cy = 130;
+  const rOuter = 108;
+  const rMid = 78;
+  const rInner = 48;
   let angle = 0;
 
-  const arcs = slices.map((slice, i) => {
-    const sweep = (slice.count / total) * 360;
-    const start = angle;
-    const end = angle + sweep;
-    angle = end;
-    return {
-      ...slice,
-      path: describeArc(cx, cy, r, start, end),
-      color: CHART_COLORS[i % CHART_COLORS.length],
-    };
+  const gatewayArcs = [];
+  const beaconArcs = [];
+
+  groups.forEach((group, gi) => {
+    const gatewayColor = GATEWAY_COLORS[gi % GATEWAY_COLORS.length];
+    const gatewaySweep = (group.beacons.length / total) * 360;
+    const gwStart = angle;
+    const gwEnd = angle + gatewaySweep;
+
+    gatewayArcs.push({
+      key: group.location,
+      path: describeDonutSegment(cx, cy, rMid, rInner, gwStart, gwEnd),
+      color: gatewayColor,
+      location: group.location,
+      count: group.beacons.length,
+    });
+
+    const beaconSweep = group.beacons.length > 0 ? gatewaySweep / group.beacons.length : 0;
+    group.beacons.forEach((beacon, bi) => {
+      const bStart = angle + bi * beaconSweep;
+      const bEnd = bStart + beaconSweep;
+      beaconArcs.push({
+        key: beacon.mac,
+        path: describeDonutSegment(cx, cy, rOuter, rMid + 2, bStart, bEnd),
+        color: beaconShade(gatewayColor, bi, group.beacons.length),
+        name: beacon.name,
+        location: group.location,
+      });
+    });
+
+    angle = gwEnd;
   });
 
   return (
     <div className="flex flex-col sm:flex-row items-center gap-4 h-full">
-      <svg viewBox="0 0 240 240" className="w-[200px] h-[200px] shrink-0">
-        {arcs.map((a) => (
-          <path key={a.location} d={a.path} fill={a.color} opacity="0.92">
-            <title>{`${a.location}: ${a.count} (${Math.round((a.count / total) * 100)}%)`}</title>
+      <svg viewBox="0 0 260 260" className="w-[220px] h-[220px] shrink-0" role="img" aria-label="Gateway and beacon pie chart">
+        <circle cx={cx} cy={cy} r={rOuter + 4} fill="none" stroke="currentColor" strokeOpacity="0.08" />
+        {beaconArcs.map((a) => (
+          <path key={a.key} d={a.path} fill={a.color} stroke="#fff" strokeWidth="0.6" opacity="0.95">
+            <title>{`${a.name} · ${a.location}`}</title>
           </path>
         ))}
-        <circle cx={cx} cy={cy} r={42} fill="var(--color-card)" />
+        {gatewayArcs.map((a) => (
+          <path key={`gw-${a.key}`} d={a.path} fill={a.color} opacity="0.88" stroke="#fff" strokeWidth="0.8">
+            <title>{`${a.location}: ${a.count} beacons`}</title>
+          </path>
+        ))}
+        <circle cx={cx} cy={cy} r={rInner - 2} style={{ fill: 'var(--color-card)' }} stroke="currentColor" strokeOpacity="0.1" />
         <text x={cx} y={cy - 4} textAnchor="middle" fontSize="20" fontWeight="700" fill="currentColor">{total}</text>
         <text x={cx} y={cy + 14} textAnchor="middle" fontSize="10" fill="currentColor" opacity="0.65">Beacons</text>
       </svg>
-      <ul className="flex-1 space-y-2 text-sm min-w-0">
-        {arcs.map((a) => (
-          <li key={a.location} className="flex items-center gap-2 min-w-0">
-            <span className="w-3 h-3 rounded-sm shrink-0" style={{ backgroundColor: a.color }} />
-            <span className="truncate flex-1" title={a.location}>{a.location}</span>
-            <span className="text-muted shrink-0">{a.count}</span>
+      <ul className="flex-1 space-y-3 text-sm min-w-0 max-h-[280px] overflow-y-auto">
+        {groups.map((g, gi) => (
+          <li key={g.location}>
+            <div className="flex items-center gap-2 mb-1">
+              <span className="w-3 h-3 rounded-sm shrink-0" style={{ backgroundColor: GATEWAY_COLORS[gi % GATEWAY_COLORS.length] }} />
+              <span className="truncate font-medium" title={g.location}>{g.location}</span>
+              <span className="text-muted shrink-0">{g.beacons.length}</span>
+            </div>
+            <p className="text-xs text-muted pl-5 truncate" title={g.beacons.map((b) => b.name).join(', ')}>
+              {g.beacons.map((b) => b.name).join(', ')}
+            </p>
           </li>
         ))}
       </ul>
@@ -164,10 +238,6 @@ function LocationPieChart({ slices }) {
   );
 }
 
-/**
- * Dashboard 3：橫向分段條圖（每列一個 Location，段內為該處的 Beacon）
- * 比圓餅圖更適合顯示「誰在哪裡」的對應關係。
- */
 function LocationBeaconStripChart({ groups }) {
   if (groups.length === 0) {
     return (
@@ -208,7 +278,7 @@ function LocationBeaconStripChart({ groups }) {
               </text>
               <rect x={barLeft} y={y} width={barWidth} height={28} rx="6" fill="currentColor" fillOpacity="0.06" />
               {group.beacons.map((beacon, i) => {
-                const color = CHART_COLORS[i % CHART_COLORS.length];
+                const color = SEGMENT_COLORS[i % SEGMENT_COLORS.length];
                 return (
                   <g key={beacon.mac}>
                     <rect
@@ -279,11 +349,6 @@ export const Dashboard = () => {
 
   const locationGroups = useMemo(() => groupBeaconsByLocation(beaconList), [beaconList]);
 
-  const pieSlices = useMemo(
-    () => locationGroups.map((g) => ({ location: g.location, count: g.count })),
-    [locationGroups],
-  );
-
   return (
     <div className="p-8 max-w-7xl mx-auto flex flex-col gap-6">
       <div className="flex items-center justify-between">
@@ -295,26 +360,21 @@ export const Dashboard = () => {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="glass-panel p-6 lg:col-span-2">
-          <h3 className="text-lg font-bold mb-1">Dashboard 1: Temperature Bar Chart</h3>
-          <p className="text-xs text-muted mb-4">X 軸：Beacon 名稱 · Y 軸：Temperature (°C)</p>
+          <h3 className="text-lg font-bold mb-4">Dashboard 1: Temperature Bar Chart</h3>
           <div className="h-[380px]">
             <TemperatureBarChart data={chartData} />
           </div>
         </div>
 
         <div className="glass-panel p-6 min-h-[380px]">
-          <h3 className="text-lg font-bold mb-1">Dashboard 2: Beacons by Location</h3>
-          <p className="text-xs text-muted mb-4">圓餅圖：各 Location（Gateway）的 Beacon 數量</p>
+          <h3 className="text-lg font-bold mb-4">Dashboard 2: Gateway &amp; Beacon Pie Chart</h3>
           <div className="h-[320px]">
-            <LocationPieChart slices={pieSlices} />
+            <GatewayBeaconPieChart groups={locationGroups} />
           </div>
         </div>
 
         <div className="glass-panel p-6 lg:col-span-3">
-          <h3 className="text-lg font-bold mb-1">Dashboard 3: Beacon Assignment by Location</h3>
-          <p className="text-xs text-muted mb-4">
-            橫向分段條圖：每列一個 Location，色塊為該處的 Beacon（適合顯示歸屬關係；Dashboard 2 圓餅圖則顯示數量比例）
-          </p>
+          <h3 className="text-lg font-bold mb-4">Dashboard 3: Beacon Assignment by Location</h3>
           <div className="min-h-[200px] py-2">
             <LocationBeaconStripChart groups={locationGroups} />
           </div>
