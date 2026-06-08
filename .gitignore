@@ -6,6 +6,9 @@
 node_modules/
 **/node_modules/
 
+# Frontend build output (generated in nodeapp/public)
+nodeapp/public/
+
 # macOS / archive junk
 __MACOSX/
 .DS_Store

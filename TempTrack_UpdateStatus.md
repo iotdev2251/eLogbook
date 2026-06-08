@@ -154,6 +154,39 @@ docker compose up --build -d
 
 ---
 
+## [2026-06-08] 第四階段：部署優化與 CI
+
+### 修改內容
+
+1. **Docker 多階段建置**
+   - `nodeapp/Dockerfile`：預先安裝依賴、建置 frontend 至 image
+   - 新增 `nodeapp/bin/docker-start.sh`：僅在原始碼變更時重建 frontend
+
+2. **基礎設施**
+   - Postgres 釘選 `postgres:14-bullseye`
+   - `.gitignore` 忽略 `nodeapp/public/`
+   - 新增 `nodeapp/.env.default`
+
+3. **品質**
+   - GitHub Actions CI（backend jest + frontend vitest/build）
+   - 前端 `beaconDisplay` 單元測試
+
+4. **文件**
+   - 更新 `README.md`（TempTrack 部署說明）
+
+### Ubuntu 更新
+
+```bash
+cd ~/eLogbook
+git fetch origin && git reset --hard origin/main
+bash scripts/repair-env.sh
+bash scripts/deploy.sh
+```
+
+強制重建 UI：`FORCE_FRONTEND_BUILD=1 docker compose up -d --build app`
+
+---
+
 ## [2026-06-08] 修復 MQTT_HOST 與 JWT_SECRET 黏在同一行
 
 ### 原因

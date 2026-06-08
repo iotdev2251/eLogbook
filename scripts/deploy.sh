@@ -44,18 +44,11 @@ if [ "$MQTT_PASSWORD" = "changeme_mqtt_please_rotate" ]; then
 fi
 
 if [ ! -f "$APP_DIR/nodeapp/.env" ]; then
-    echo "⚠️  Nodeapp .env missing, creating from root .env values..."
-    cat > "$APP_DIR/nodeapp/.env" <<EOF
-DATABASE_URL="postgresql://docker:docker@postgresql-db:5432/elogbook?schema=public"
-NODE_PORT=3011
-PORT=3011
-MQTT_HOST=mqtt-broker
-MQTT_PORT=1883
-MQTT_USER=${MQTT_USER}
-MQTT_PASSWORD=${MQTT_PASSWORD}
-JWT_SECRET=${JWT_SECRET}
-EOF
-else
+    echo "⚠️  Nodeapp .env missing, copying from nodeapp/.env.default..."
+    cp "$APP_DIR/nodeapp/.env.default" "$APP_DIR/nodeapp/.env"
+fi
+
+if [ -f "$APP_DIR/nodeapp/.env" ]; then
     # Keep nodeapp/.env in sync with root secrets after upgrades
     for pair in "JWT_SECRET=${JWT_SECRET}" "MQTT_USER=${MQTT_USER}" "MQTT_PASSWORD=${MQTT_PASSWORD}"; do
         key="${pair%%=*}"
@@ -70,6 +63,8 @@ fi
 
 chmod +x "$APP_DIR/mosquitto/config/docker-entrypoint.sh" 2>/dev/null || true
 chmod +x "$APP_DIR/scripts/repair-env.sh" 2>/dev/null || true
+chmod +x "$APP_DIR/nodeapp/bin/docker-start.sh" 2>/dev/null || true
+chmod +x "$APP_DIR/nodeapp/bin/ensure-runtime-env.sh" 2>/dev/null || true
 
 # Mosquitto data/log must be writable by UID 1883 inside the container
 mkdir -p "$APP_DIR/mosquitto/data" "$APP_DIR/mosquitto/log"

@@ -1,5 +1,34 @@
+# Stage 1 — frontend dependencies
+FROM node:18-bullseye-slim AS frontend-deps
+WORKDIR /frontend
+COPY frontend/package.json frontend/package-lock.json ./
+RUN npm ci
+
+# Stage 2 — frontend production build (baked into image)
+FROM frontend-deps AS frontend-build
+COPY frontend/ ./
+RUN mkdir -p /build/public && VITE_BUILD_OUT_DIR=/build/public npm run build
+
+# Stage 3 — backend dependencies
+FROM node:18-bullseye-slim AS app-deps
+WORKDIR /app
+COPY nodeapp/package.json ./
+RUN npm install && touch node_modules/.install-stamp
+
+# Stage 4 — runtime image
 FROM node:18-bullseye-slim
-WORKDIR /app/
-# Install pm2 globally for production process management
-# Using Debian Bullseye (OpenSSL 1.1.1) for Prisma 3.x compatibility
+WORKDIR /app
+
 RUN npm install -g pm2
+
+COPY --from=app-deps /app/node_modules ./node_modules
+COPY nodeapp/ ./
+COPY --from=frontend-build /build/public ./public
+
+COPY frontend/package.json frontend/package-lock.json /frontend/
+COPY --from=frontend-deps /frontend/node_modules /frontend/node_modules
+
+RUN chmod +x bin/docker-start.sh bin/ensure-runtime-env.sh 2>/dev/null || true
+
+EXPOSE 3011
+CMD ["/bin/sh", "bin/docker-start.sh"]

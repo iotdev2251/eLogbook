@@ -12,6 +12,9 @@ const proxyOptions = {
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [react()],
+  test: {
+    environment: 'node',
+  },
   server: {
     proxy: {
       '/auth': proxyOptions,

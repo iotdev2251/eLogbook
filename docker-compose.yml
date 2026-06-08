@@ -3,7 +3,7 @@ volumes:
 
 services:
     postgresql-db:
-      image: postgres
+      image: postgres:14-bullseye
       volumes:
           - postgres-db-data:/var/lib/postgresql
       ports:
@@ -48,15 +48,7 @@ services:
         - TZ=Asia/Hong_Kong
         - MQTT_USER=${MQTT_USER:-temptrack}
         - MQTT_PASSWORD=${MQTT_PASSWORD:-changeme_mqtt_please_rotate}
-      command: >
-        sh -c "
-          cd /frontend && npm install && VITE_BUILD_OUT_DIR=../app/public npm run build &&
-          cd /app && npm install &&
-          chmod +x bin/ensure-runtime-env.sh 2>/dev/null || true &&
-          . ./bin/ensure-runtime-env.sh &&
-          npx prisma migrate deploy &&
-          npm run prod
-        "
+      command: ["/bin/sh", "bin/docker-start.sh"]
       restart: on-failure
       ports:
         - ${NODE_PORT}:${NODE_DOCKER_PORT}

@@ -61,6 +61,13 @@
 
 ---
 
+## [2026-06-08] 部署與 CI（第四階段）
+
+- Docker 多階段建置、智慧型 frontend 重建
+- Postgres 14 釘選、CI workflow、前端單元測試
+
+---
+
 ## [2026-06-03] UX / 開發體驗（第三階段）
 
 - Vite `/auth` proxy、401 自動登出
