@@ -154,6 +154,34 @@ docker compose up --build -d
 
 ---
 
+## [2026-06-08] 修復 MQTT_HOST 與 JWT_SECRET 黏在同一行
+
+### 原因
+
+`.env` 追加 `JWT_SECRET` 時缺少換行，變成：
+`MQTT_HOST=mqtt-brokerJWT_SECRET=...` → app 無法解析 `mqtt-broker` 主機名。
+
+### 修復
+
+- 新增 `scripts/repair-env.sh` 自動拆行修復
+- `deploy.sh` / `ensure-runtime-env.sh` 追加變數時強制換行
+- 啟動時強制 `export MQTT_HOST=mqtt-broker`
+
+### Ubuntu
+
+```bash
+cd ~/eLogbook
+git fetch origin && git reset --hard origin/main
+bash scripts/repair-env.sh
+docker compose down
+docker compose up -d --build
+docker compose logs app --tail 10 | grep -i mqtt
+```
+
+應看到 `MQTT broker connected`。
+
+---
+
 ## [2026-06-08] 修復 MQTT broker exit 13 崩潰
 
 ### 原因

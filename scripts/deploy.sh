@@ -18,13 +18,16 @@ if [ ! -f "$APP_DIR/.env" ]; then
     cp "$APP_DIR/.env.default" "$APP_DIR/.env"
 fi
 
+# Repair glued MQTT_HOST+JWT_SECRET lines (missing newline on append)
+bash "$APP_DIR/scripts/repair-env.sh" 2>/dev/null || true
+
 # Ensure JWT_SECRET exists and is long enough
 if ! grep -q '^JWT_SECRET=.\{32,\}' "$APP_DIR/.env" 2>/dev/null; then
     if grep -q '^JWT_SECRET=' "$APP_DIR/.env" 2>/dev/null; then
         sed -i '/^JWT_SECRET=/d' "$APP_DIR/.env"
     fi
     echo "🔐 Generating JWT_SECRET..."
-    echo "JWT_SECRET=$(openssl rand -hex 32)" >> "$APP_DIR/.env"
+    printf '\nJWT_SECRET=%s\n' "$(openssl rand -hex 32)" >> "$APP_DIR/.env"
 fi
 
 # Load root env for downstream files
