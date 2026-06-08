@@ -154,6 +154,31 @@ docker compose up --build -d
 
 ---
 
+## [2026-06-08] 修復資料庫表不存在 (P2021)
+
+### 原因
+
+`prisma/migrations` 沒有 SQL，`migrate deploy` 不會建表 → `public.param does not exist`
+
+### 修復
+
+- 新增 `prisma/migrations/20240608000000_init/migration.sql`
+- 啟動時執行 `prisma db seed`（admin / params）
+
+### Ubuntu
+
+```bash
+cd ~/eLogbook
+git fetch origin && git reset --hard origin/main
+docker compose up -d --build
+sleep 15
+docker compose logs app --tail 20
+```
+
+應看到 `Applying migration` 和 `HTTPS listening on port 3011`
+
+---
+
 ## [2026-06-08] 修復 crash loop + git pull 權限錯誤
 
 ### 原因

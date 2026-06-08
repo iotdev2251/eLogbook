@@ -73,5 +73,10 @@ if [ "$MIGRATE_OK" != "1" ]; then
   exit 1
 fi
 
+echo "[docker-start] Seeding database (admin user, params, sample data)..."
+if ! npx prisma db seed; then
+  echo "[docker-start] WARN: prisma db seed failed (may be OK if already seeded)"
+fi
+
 echo "[docker-start] Starting application (USE_HTTP=${USE_HTTP:-0}, PORT=${PORT:-3011})..."
 exec npm run prod

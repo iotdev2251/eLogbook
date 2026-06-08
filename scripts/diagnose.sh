@@ -24,10 +24,16 @@ echo ""
 
 APP_STATUS=$(docker compose ps --format '{{.Status}}' app 2>/dev/null | head -1)
 if echo "$APP_STATUS" | grep -qE 'Restarting|starting'; then
-  echo "⚠️  app may be crash-looping. Common fix:"
+  echo "⚠️  app may be crash-looping. Check logs for Prisma P2021 (missing tables)."
   echo "    bash scripts/fix-permissions.sh"
   echo "    git fetch origin && git reset --hard origin/main"
   echo "    docker compose up -d --build"
+  echo ""
+fi
+
+if docker compose logs app 2>/dev/null | grep -q 'public.param.*does not exist'; then
+  echo "⚠️  Database tables missing. After pulling latest code, restart app:"
+  echo "    docker compose up -d --build app"
   echo ""
 fi
 
