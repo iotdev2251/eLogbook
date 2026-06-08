@@ -11,7 +11,11 @@ cp .env.default .env
 bash scripts/deploy.sh
 ```
 
-Access: **https://\<server-ip\>:3011** (default login `admin` / `admin123` — change in production)
+Access: **http://\<server-ip\>:3011** (default `USE_HTTP=1`; HTTPS: set `USE_HTTP=0` in `.env`)
+
+Login: `admin` / `admin123` — change in production.
+
+Troubleshoot: `bash scripts/diagnose.sh`
 
 ## Environment files
 

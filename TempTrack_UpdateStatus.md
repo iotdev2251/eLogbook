@@ -154,6 +154,38 @@ docker compose up --build -d
 
 ---
 
+## [2026-06-08] 修復 UI 無法連線（HTTP + 部署穩定性）
+
+### 原因
+
+1. 預設伺服器只聽 **HTTPS**，瀏覽器輸入 `http://IP:3011` 會連不上
+2. app 容器可能因 migrate / mqtt healthcheck 未就緒而無法啟動
+
+### 修復
+
+- 預設 `USE_HTTP=1`：port **3011** 使用 HTTP（區網可直接開）
+- 新增 `scripts/diagnose.sh` 診斷腳本
+- migrate 失敗自動重試 5 次
+- mqtt 改為 `service_started`（不等 healthcheck）
+- 刪除過期 `frontend/package-lock.json`
+
+### Ubuntu 部署
+
+```bash
+cd ~/eLogbook
+git fetch origin && git reset --hard origin/main
+bash scripts/repair-env.sh
+# 若 .env 沒有 USE_HTTP，加入：
+grep -q '^USE_HTTP=' .env || echo 'USE_HTTP=1' >> .env
+docker compose down
+FORCE_FRONTEND_BUILD=1 docker compose up -d --build
+bash scripts/diagnose.sh
+```
+
+瀏覽器開：**http://10.0.56.130:3011**
+
+---
+
 ## [2026-06-08] 修復 Docker 建置 npm ci 失敗
 
 ### 原因

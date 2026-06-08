@@ -65,6 +65,7 @@ chmod +x "$APP_DIR/mosquitto/config/docker-entrypoint.sh" 2>/dev/null || true
 chmod +x "$APP_DIR/scripts/repair-env.sh" 2>/dev/null || true
 chmod +x "$APP_DIR/nodeapp/bin/docker-start.sh" 2>/dev/null || true
 chmod +x "$APP_DIR/nodeapp/bin/ensure-runtime-env.sh" 2>/dev/null || true
+chmod +x "$APP_DIR/scripts/diagnose.sh" 2>/dev/null || true
 
 # Mosquitto data/log must be writable by UID 1883 inside the container
 mkdir -p "$APP_DIR/mosquitto/data" "$APP_DIR/mosquitto/log"
@@ -87,6 +88,8 @@ docker compose -f "$APP_DIR/docker-compose.yml" ps
 
 echo "------------------------------------------------"
 echo "✅ eLogbook is now running!"
-echo "📍 Access GUI at: https://<your-server-ip>:3011"
+echo "📍 Access GUI at: http://<your-server-ip>:3011  (USE_HTTP=1, default)"
+echo "📍 Or HTTPS:      https://<your-server-ip>:3011  (set USE_HTTP=0 in .env)"
+echo "🔧 Troubleshoot:  bash scripts/diagnose.sh"
 echo "🔑 Ensure JWT_SECRET and MQTT_PASSWORD are set in .env"
 echo "------------------------------------------------"

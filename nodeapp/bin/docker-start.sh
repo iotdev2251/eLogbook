@@ -33,15 +33,33 @@ if [ -f /frontend/package.json ]; then
 
   if [ "$NEED_BUILD" = "1" ]; then
     echo "[docker-start] Building frontend..."
-    VITE_BUILD_OUT_DIR=/app/public npm run build
+    mkdir -p /app/public
+    if ! VITE_BUILD_OUT_DIR=/app/public npm run build; then
+      echo "[docker-start] ERROR: frontend build failed"
+      exit 1
+    fi
   else
     echo "[docker-start] Frontend build up to date, skipping."
   fi
   cd /app
 fi
 
-echo "[docker-start] Running database migrations..."
-npx prisma migrate deploy
+mkdir -p /app/public
 
-echo "[docker-start] Starting application..."
+echo "[docker-start] Running database migrations..."
+MIGRATE_OK=0
+for attempt in 1 2 3 4 5; do
+  if npx prisma migrate deploy; then
+    MIGRATE_OK=1
+    break
+  fi
+  echo "[docker-start] migrate failed, retry in 5s ($attempt/5)..."
+  sleep 5
+done
+if [ "$MIGRATE_OK" != "1" ]; then
+  echo "[docker-start] ERROR: prisma migrate deploy failed"
+  exit 1
+fi
+
+echo "[docker-start] Starting application (USE_HTTP=${USE_HTTP:-1})..."
 exec npm run prod

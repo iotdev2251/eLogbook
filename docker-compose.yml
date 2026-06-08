@@ -49,10 +49,19 @@ services:
         - MQTT_USER=${MQTT_USER:-temptrack}
         - MQTT_PASSWORD=${MQTT_PASSWORD:-changeme_mqtt_please_rotate}
         - FORCE_FRONTEND_BUILD=${FORCE_FRONTEND_BUILD:-0}
+        - USE_HTTP=${USE_HTTP:-1}
+        - HTTP_PORT=${HTTP_PORT:-3010}
       command: ["/bin/sh", "bin/docker-start.sh"]
       restart: on-failure
       ports:
         - ${NODE_PORT}:${NODE_DOCKER_PORT}
+        - ${HTTP_PORT:-3010}:${HTTP_PORT:-3010}
+      healthcheck:
+        test: ["CMD", "node", "-e", "const h=process.env.USE_HTTP==='1'||process.env.USE_HTTP==='true';const p=h?(process.env.NODE_PORT||3011):(process.env.HTTP_PORT||3010);fetch('http://127.0.0.1:'+p+'/').then(r=>process.exit(r.status<500?0:1)).catch(()=>process.exit(1))"]
+        interval: 15s
+        timeout: 5s
+        retries: 8
+        start_period: 180s
       working_dir: /app
       volumes:
         - ./nodeapp:/app
@@ -63,6 +72,6 @@ services:
         postgresql-db:
           condition: service_healthy
         mqtt-broker:
-          condition: service_healthy
+          condition: service_started
       stdin_open: true
       tty: true

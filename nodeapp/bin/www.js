@@ -6,6 +6,7 @@
 
 import { myApp } from '../app/app.js';
 import { socketAuthMiddleware } from '../app/auth/socket-auth.js';
+import { createServer as createServerHttp } from 'http';
 import { createServer as createServerHttps } from 'https';
 import debugPkg from 'debug';
 import { Server } from 'socket.io'
@@ -15,6 +16,7 @@ const SSL_KEY_PATH = 'sslcert/server-key.pem'
 const SSL_CERT_PATH = 'sslcert/server-cert.pem'
 const SSL_CA_PATH = 'sslcert/cert.pem'
 
+const useHttpOnly = process.env.USE_HTTP === '1' || process.env.USE_HTTP === 'true'
 
 const debug = debugPkg('myproj:server');
 /**
@@ -24,22 +26,30 @@ const debug = debugPkg('myproj:server');
 const app = myApp.getApp()
 
 const port = normalizePort(process.env.PORT || process.env.NODE_PORT || '3011');
+const httpAltPort = normalizePort(process.env.HTTP_PORT || '3010');
 app.set('port', port);
 
-/**
- * Create HTTPS server.
- */
+const io = new Server()
 
-const credentials = { 
-  key: fs.readFileSync(SSL_KEY_PATH, 'utf8'), 
-  cert: fs.readFileSync(SSL_CERT_PATH, 'utf8'), 
-  ca: [fs.readFileSync(SSL_CA_PATH, 'utf8')]};
-const httpsServer = createServerHttps(credentials, app);
+function createHttpsServer() {
+  const credentials = {
+    key: fs.readFileSync(SSL_KEY_PATH, 'utf8'),
+    cert: fs.readFileSync(SSL_CERT_PATH, 'utf8'),
+    ca: [fs.readFileSync(SSL_CA_PATH, 'utf8')],
+  };
+  return createServerHttps(credentials, app);
+}
 
-/**
- * Add Socket.IO
- */
-const io = new Server(httpsServer)
+function listenServer(server, listenPort, label) {
+  server.listen(listenPort);
+  server.on('error', (error) => onError(error, listenPort));
+  server.on('listening', () => {
+    const addr = server.address();
+    const bind = typeof addr === 'string' ? 'pipe ' + addr : 'port ' + addr.port;
+    console.log(`${label} listening on ${bind}`);
+    debug('Listening on ' + bind);
+  });
+}
 
 async function start() {
   await myApp.init(io)
@@ -50,9 +60,20 @@ async function start() {
     console.log("Socket connected: " + socket.id + " user=" + socket.user?.username)
   })
 
-  httpsServer.listen(port);
-  httpsServer.on('error', onError);
-  httpsServer.on('listening', onListening);
+  if (useHttpOnly) {
+    const httpServer = createServerHttp(app)
+    io.attach(httpServer)
+    listenServer(httpServer, port, 'HTTP')
+    return
+  }
+
+  const httpsServer = createHttpsServer()
+  io.attach(httpsServer)
+  listenServer(httpsServer, port, 'HTTPS')
+
+  const httpServer = createServerHttp(app)
+  io.attach(httpServer)
+  listenServer(httpServer, httpAltPort, 'HTTP')
 }
 
 start().catch((err) => {
@@ -84,14 +105,14 @@ function normalizePort(val) {
  * Event listener for HTTP server "error" event.
  */
 
-function onError(error) {
+function onError(error, listenPort) {
   if (error.syscall !== 'listen') {
     throw error;
   }
 
-  const bind = typeof port === 'string'
-    ? 'Pipe ' + port
-    : 'Port ' + port;
+  const bind = typeof listenPort === 'string'
+    ? 'Pipe ' + listenPort
+    : 'Port ' + listenPort;
 
   // handle specific listen errors with friendly messages
   switch (error.code) {
@@ -106,16 +127,4 @@ function onError(error) {
     default:
       throw error;
   }
-}
-
-/**
- * Event listener for HTTP server "listening" event.
- */
-
-function onListening() {
-  const addr = httpsServer.address();
-  const bind = typeof addr === 'string'
-    ? 'pipe ' + addr
-    : 'port ' + addr.port;
-  debug('Listening on ' + bind);
 }
