@@ -26,7 +26,6 @@ const debug = debugPkg('myproj:server');
 const app = myApp.getApp()
 
 const port = normalizePort(process.env.PORT || process.env.NODE_PORT || '3011');
-const httpAltPort = normalizePort(process.env.HTTP_PORT || '3010');
 app.set('port', port);
 
 const io = new Server()
@@ -70,10 +69,6 @@ async function start() {
   const httpsServer = createHttpsServer()
   io.attach(httpsServer)
   listenServer(httpsServer, port, 'HTTPS')
-
-  const httpServer = createServerHttp(app)
-  io.attach(httpServer)
-  listenServer(httpServer, httpAltPort, 'HTTP')
 }
 
 start().catch((err) => {

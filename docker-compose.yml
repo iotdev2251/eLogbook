@@ -46,28 +46,24 @@ services:
       env_file: ./.env
       environment:
         - TZ=Asia/Hong_Kong
+        - PORT=${NODE_DOCKER_PORT:-3011}
+        - NODE_PORT=${NODE_DOCKER_PORT:-3011}
+        - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASS}@postgresql-db:5432/${POSTGRES_DB}?schema=public
         - MQTT_USER=${MQTT_USER:-temptrack}
         - MQTT_PASSWORD=${MQTT_PASSWORD:-changeme_mqtt_please_rotate}
         - FORCE_FRONTEND_BUILD=${FORCE_FRONTEND_BUILD:-0}
-        - USE_HTTP=${USE_HTTP:-1}
-        - HTTP_PORT=${HTTP_PORT:-3010}
+        - USE_HTTP=${USE_HTTP:-0}
       command: ["/bin/sh", "bin/docker-start.sh"]
-      restart: on-failure
+      restart: unless-stopped
       ports:
         - ${NODE_PORT}:${NODE_DOCKER_PORT}
-        - ${HTTP_PORT:-3010}:${HTTP_PORT:-3010}
       healthcheck:
-        test: ["CMD", "node", "-e", "const h=process.env.USE_HTTP==='1'||process.env.USE_HTTP==='true';const p=h?(process.env.NODE_PORT||3011):(process.env.HTTP_PORT||3010);fetch('http://127.0.0.1:'+p+'/').then(r=>process.exit(r.status<500?0:1)).catch(()=>process.exit(1))"]
+        test: ["CMD", "node", "-e", "const h=process.env.USE_HTTP==='1'||process.env.USE_HTTP==='true';const p=process.env.PORT||3011;if(h){fetch('http://127.0.0.1:'+p+'/').then(r=>process.exit(r.status<500?0:1)).catch(()=>process.exit(1))}else{require('https').get('https://127.0.0.1:'+p+'/',{rejectUnauthorized:false},r=>{r.resume();process.exit(r.statusCode<500?0:1)}).on('error',()=>process.exit(1))}"]
         interval: 15s
         timeout: 5s
         retries: 8
-        start_period: 180s
+        start_period: 120s
       working_dir: /app
-      volumes:
-        - ./nodeapp:/app
-        - ./nodeapp/node_modules:/app/node_modules
-        - ./frontend:/frontend
-        - /frontend/node_modules
       depends_on:
         postgresql-db:
           condition: service_healthy

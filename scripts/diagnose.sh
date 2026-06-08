@@ -35,7 +35,7 @@ if command -v curl >/dev/null 2>&1; then
   curl -sS -o /dev/null -w "  http://127.0.0.1:3011/  → HTTP %{http_code}\n" http://127.0.0.1:3011/ 2>/dev/null \
     || echo "  http://127.0.0.1:3011/  → failed"
   curl -sk -o /dev/null -w "  https://127.0.0.1:3011/ → HTTPS %{http_code}\n" https://127.0.0.1:3011/ 2>/dev/null \
-    || echo "  https://127.0.0.1:3011/ → failed (expected if USE_HTTP=1)"
+    || echo "  https://127.0.0.1:3011/ → failed"
 else
   echo "  curl not installed — skip HTTP checks"
 fi
@@ -55,7 +55,6 @@ for key in NODE_PORT USE_HTTP JWT_SECRET MQTT_HOST POSTGRES_HOST; do
 done
 echo ""
 
-echo "Access URLs:"
-echo "  http://<server-ip>:3011   (default USE_HTTP=1)"
-echo "  https://<server-ip>:3011  (set USE_HTTP=0 in .env)"
+echo "Access URL:"
+echo "  https://<server-ip>:3011  (default — accept self-signed cert)"
 echo "=============================================="

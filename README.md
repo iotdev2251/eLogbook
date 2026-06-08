@@ -11,7 +11,7 @@ cp .env.default .env
 bash scripts/deploy.sh
 ```
 
-Access: **http://\<server-ip\>:3011** (default `USE_HTTP=1`; HTTPS: set `USE_HTTP=0` in `.env`)
+Access: **https://\<server-ip\>:3011** (self-signed cert — accept the browser warning)
 
 Login: `admin` / `admin123` — change in production.
 

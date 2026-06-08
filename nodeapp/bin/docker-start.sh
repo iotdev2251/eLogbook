@@ -61,5 +61,5 @@ if [ "$MIGRATE_OK" != "1" ]; then
   exit 1
 fi
 
-echo "[docker-start] Starting application (USE_HTTP=${USE_HTTP:-1})..."
+echo "[docker-start] Starting application (USE_HTTP=${USE_HTTP:-0}, PORT=${PORT:-3011})..."
 exec npm run prod

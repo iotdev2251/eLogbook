@@ -21,6 +21,14 @@ fi
 # Repair glued MQTT_HOST+JWT_SECRET lines (missing newline on append)
 bash "$APP_DIR/scripts/repair-env.sh" 2>/dev/null || true
 
+# HTTPS on 3011 by default
+if ! grep -q '^USE_HTTP=' "$APP_DIR/.env" 2>/dev/null; then
+    echo "USE_HTTP=0" >> "$APP_DIR/.env"
+elif grep -q '^USE_HTTP=1' "$APP_DIR/.env" 2>/dev/null; then
+    sed -i 's/^USE_HTTP=1/USE_HTTP=0/' "$APP_DIR/.env"
+    echo "ℹ️  Switched USE_HTTP to 0 (HTTPS on port 3011)"
+fi
+
 # Ensure JWT_SECRET exists and is long enough
 if ! grep -q '^JWT_SECRET=.\{32,\}' "$APP_DIR/.env" 2>/dev/null; then
     if grep -q '^JWT_SECRET=' "$APP_DIR/.env" 2>/dev/null; then
@@ -88,8 +96,8 @@ docker compose -f "$APP_DIR/docker-compose.yml" ps
 
 echo "------------------------------------------------"
 echo "✅ eLogbook is now running!"
-echo "📍 Access GUI at: http://<your-server-ip>:3011  (USE_HTTP=1, default)"
-echo "📍 Or HTTPS:      https://<your-server-ip>:3011  (set USE_HTTP=0 in .env)"
+echo "📍 Access GUI at: https://<your-server-ip>:3011"
+echo "   (accept the self-signed certificate warning in your browser)"
 echo "🔧 Troubleshoot:  bash scripts/diagnose.sh"
 echo "🔑 Ensure JWT_SECRET and MQTT_PASSWORD are set in .env"
 echo "------------------------------------------------"

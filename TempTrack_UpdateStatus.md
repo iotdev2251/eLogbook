@@ -154,6 +154,31 @@ docker compose up --build -d
 
 ---
 
+## [2026-06-08] 改回 HTTPS UI + 修復容器無法啟動
+
+### 變更
+
+- 預設 **USE_HTTP=0**，UI 使用 **https://IP:3011**
+- 移除 `./nodeapp`、`./frontend` volume 掛載（避免覆蓋 image 內已建置的程式）
+- docker-compose 注入 `DATABASE_URL`、`PORT`
+- `restart: unless-stopped`
+
+### Ubuntu 部署
+
+```bash
+cd ~/eLogbook
+git fetch origin && git reset --hard origin/main
+bash scripts/repair-env.sh
+sed -i 's/^USE_HTTP=1/USE_HTTP=0/' .env 2>/dev/null || true
+docker compose down
+docker compose up -d --build
+bash scripts/diagnose.sh
+```
+
+瀏覽器：**https://10.0.56.130:3011**（接受自簽憑證警告）
+
+---
+
 ## [2026-06-08] 修復 UI 無法連線（HTTP + 部署穩定性）
 
 ### 原因
