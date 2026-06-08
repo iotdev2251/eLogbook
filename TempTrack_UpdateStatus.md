@@ -154,6 +154,35 @@ docker compose up --build -d
 
 ---
 
+## [2026-06-08] 修復 MQTT broker exit 13 崩潰
+
+### 原因
+
+1. `passwd` 檔為 root `chmod 600`，Mosquitto（UID 1883）無法讀取 → 啟動失敗 exit 13
+2. `data/`、`log/` 目錄權限不足
+
+### 修復
+
+- 移除 `password_file`（Gateway 需匿名發布；內網 broker）
+- Entrypoint 修正 data/log 目錄權限，使用 `/usr/sbin/mosquitto`
+- 釘選 `eclipse-mosquitto:2`
+- `deploy.sh` 啟動前修正 mosquitto 目錄權限
+
+### Ubuntu（請整段執行）
+
+```bash
+cd ~/eLogbook
+git fetch origin && git reset --hard origin/main
+docker compose down
+sudo rm -f mosquitto/config/passwd
+sudo chown -R 1883:1883 mosquitto/data mosquitto/log 2>/dev/null || sudo chmod -R 777 mosquitto/data mosquitto/log
+docker compose up -d
+docker compose ps
+docker compose logs mqtt-broker --tail 15
+```
+
+---
+
 ## [2026-06-08] 修復 MQTT broker unhealthy
 
 ### 原因

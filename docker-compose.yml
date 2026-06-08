@@ -23,24 +23,21 @@ services:
         retries: 5
 
     mqtt-broker:
-      image: eclipse-mosquitto
+      image: eclipse-mosquitto:2
       volumes:
         - ./mosquitto:/mosquitto
         - ./mosquitto/data:/mosquitto/data
         - ./mosquitto/log:/mosquitto/log
       ports:
         - ${MQTT_PORT}:${MQTT_DOCKER_PORT}
-      environment:
-        - MQTT_USER=${MQTT_USER:-temptrack}
-        - MQTT_PASSWORD=${MQTT_PASSWORD:-changeme_mqtt_please_rotate}
       entrypoint: ["/bin/sh", "/mosquitto/config/docker-entrypoint.sh"]
-      restart: on-failure
+      restart: unless-stopped
       healthcheck:
         test: ["CMD-SHELL", "mosquitto_pub -h 127.0.0.1 -p 1883 -t healthcheck/ping -m 1 -q 0"]
-        interval: 10s
+        interval: 15s
         timeout: 5s
-        retries: 5
-        start_period: 10s
+        retries: 3
+        start_period: 20s
 
     app:
       build:

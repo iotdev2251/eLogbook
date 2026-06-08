@@ -1,18 +1,16 @@
 #!/bin/sh
 set -e
 
-PASSWD_FILE="/mosquitto/config/passwd"
-MQTT_USER="${MQTT_USER:-temptrack}"
-MQTT_PASSWORD="${MQTT_PASSWORD:-changeme_mqtt_please_rotate}"
+# eclipse-mosquitto runs as UID 1883
+MOSQUITTO_UID=1883
+MOSQUITTO_GID=1883
 
-# mosquitto_passwd -c fails when passwd already exists (container restart)
-if [ -f "$PASSWD_FILE" ] && [ -s "$PASSWD_FILE" ]; then
-  mosquitto_passwd -b "$PASSWD_FILE" "$MQTT_USER" "$MQTT_PASSWORD"
-else
-  rm -f "$PASSWD_FILE"
-  mosquitto_passwd -b -c "$PASSWD_FILE" "$MQTT_USER" "$MQTT_PASSWORD"
-fi
+mkdir -p /mosquitto/data /mosquitto/log
 
-chmod 600 "$PASSWD_FILE" 2>/dev/null || true
+chown -R "$MOSQUITTO_UID:$MOSQUITTO_GID" /mosquitto/data /mosquitto/log 2>/dev/null \
+  || chmod -R 777 /mosquitto/data /mosquitto/log
 
-exec /docker-entrypoint.sh mosquitto -c /mosquitto/config/mosquitto.conf
+# Remove stale passwd if present (password_file removed from mosquitto.conf)
+rm -f /mosquitto/config/passwd
+
+exec /docker-entrypoint.sh /usr/sbin/mosquitto -c /mosquitto/config/mosquitto.conf

@@ -67,6 +67,12 @@ fi
 
 chmod +x "$APP_DIR/mosquitto/config/docker-entrypoint.sh" 2>/dev/null || true
 
+# Mosquitto data/log must be writable by UID 1883 inside the container
+mkdir -p "$APP_DIR/mosquitto/data" "$APP_DIR/mosquitto/log"
+sudo rm -f "$APP_DIR/mosquitto/config/passwd" 2>/dev/null || rm -f "$APP_DIR/mosquitto/config/passwd" 2>/dev/null || true
+sudo chown -R 1883:1883 "$APP_DIR/mosquitto/data" "$APP_DIR/mosquitto/log" 2>/dev/null \
+  || chmod -R 777 "$APP_DIR/mosquitto/data" "$APP_DIR/mosquitto/log"
+
 # 3. Stop existing containers
 echo "🛑 Stopping existing services..."
 docker compose -f "$APP_DIR/docker-compose.yml" down
