@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import axios from '../api/axiosSetup';
 import { X } from 'lucide-react';
 
 export const BeaconEditModal = ({ beacon, open, onClose, onSaved }) => {
@@ -14,6 +14,15 @@ export const BeaconEditModal = ({ beacon, open, onClose, onSaved }) => {
     setGatewayName(beacon.gateway_name || '');
     setError('');
   }, [beacon, open]);
+
+  useEffect(() => {
+    if (!open) return undefined;
+    const onKeyDown = (e) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [open, onClose]);
 
   if (!open || !beacon) return null;
 
@@ -45,6 +54,7 @@ export const BeaconEditModal = ({ beacon, open, onClose, onSaved }) => {
         className="glass-panel w-full max-w-md p-6 shadow-xl"
         onClick={e => e.stopPropagation()}
         role="dialog"
+        aria-modal="true"
         aria-labelledby="beacon-edit-title"
       >
         <div className="flex items-center justify-between mb-6">

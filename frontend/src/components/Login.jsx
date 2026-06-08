@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import axios from 'axios';
+import axios from '../api/axiosSetup';
 import { useNavigate } from 'react-router-dom';
 import { Lock, User } from 'lucide-react';
 
@@ -52,24 +52,30 @@ export const Login = ({ onLogin }) => {
 
         <form onSubmit={handleLogin} className="flex flex-col gap-4">
           <div className="relative">
-            <User className="absolute left-3 top-1/2 -translate-y-1/2 text-muted w-5 h-5" />
+            <label htmlFor="login-username" className="sr-only">Username</label>
+            <User className="absolute left-3 top-1/2 -translate-y-1/2 text-muted w-5 h-5" aria-hidden="true" />
             <input
+              id="login-username"
               type="text"
               placeholder="Username"
               value={username}
               onChange={e => setUsername(e.target.value)}
               className="input-field pl-10 py-3"
+              autoComplete="username"
               required
             />
           </div>
           <div className="relative">
-            <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-muted w-5 h-5" />
+            <label htmlFor="login-password" className="sr-only">Password</label>
+            <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-muted w-5 h-5" aria-hidden="true" />
             <input
+              id="login-password"
               type="password"
               placeholder="Password"
               value={password}
               onChange={e => setPassword(e.target.value)}
               className="input-field pl-10 py-3"
+              autoComplete="current-password"
               required
             />
           </div>

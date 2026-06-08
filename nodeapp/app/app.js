@@ -34,7 +34,7 @@ function initApp() {
                 defaultSrc: ["'self'"],
                 scriptSrc: ["'self'", "'unsafe-inline'"],
                 styleSrc: ["'self'", "'unsafe-inline'"],
-                imgSrc: ["'self'", "data:", "https://ui-avatars.com"],
+                imgSrc: ["'self'", "data:"],
                 connectSrc: ["'self'", "wss:", "ws:"],
             },
         },

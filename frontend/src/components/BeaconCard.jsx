@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
+import { formatBeaconStatus } from '../utils/beaconDisplay';
 
 function cn(...inputs) {
   return twMerge(clsx(inputs));
@@ -68,7 +69,7 @@ export const BeaconCard = ({ beacon, isAdmin, onEdit }) => {
                 : 'bg-slate-200 text-slate-600 dark:bg-gray-500/20 dark:text-gray-400'
             )}
           >
-            {beacon.status}
+            {formatBeaconStatus(beacon.status)}
           </span>
         </div>
 

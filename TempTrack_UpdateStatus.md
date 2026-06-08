@@ -154,6 +154,41 @@ docker compose up --build -d
 
 ---
 
+## [2026-06-03] 第三階段 UX / 開發體驗
+
+### 修改內容
+
+1. **開發環境**
+   - Vite proxy 新增 `/auth`，目標改為 HTTPS 後端（`secure: false`）
+
+2. **認證體驗**
+   - Axios 401 自動導向登入頁
+
+3. **前端架構**
+   - 共用 `useBeacons` hook（Dashboard / Real Time Status）
+   - `ErrorBoundary` 防止整頁白屏
+   - 移除未使用的 `recharts`、`framer-motion`
+
+4. **UX**
+   - Recent Activity 改為真實 Socket 更新次數 / 分鐘
+   - 系統時間每秒更新
+   - 404 頁面、Settings 僅 admin 可見
+   - Beacon 狀態顯示可讀標籤（In Range / Out / Alert）
+   - 本地 UserAvatar（不再依賴外部 API）
+   - Modal 支援 Esc 關閉、登入表單 a11y 改善
+
+### Ubuntu 更新
+
+```bash
+cd ~/eLogbook
+docker compose down
+sudo chown -R $USER:$USER nodeapp
+git fetch origin && git reset --hard origin/main
+docker compose up --build -d
+```
+
+---
+
 ## [2026-06-03] 修復升級後無法啟動
 
 ### 原因

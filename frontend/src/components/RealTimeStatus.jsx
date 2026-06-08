@@ -1,84 +1,29 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import axios from 'axios';
-import { useSocket } from '../hooks/useSocket';
+import React, { useState, useMemo } from 'react';
+import { useBeacons } from '../hooks/useBeacons';
 import { BeaconCard } from './BeaconCard';
 import { BeaconEditModal } from './BeaconEditModal';
 import { Activity, Radio, AlertCircle, CheckCircle2, Search } from 'lucide-react';
-
-const beaconDisplayName = (beacon) =>
-  (beacon.nickname || beacon.name || beacon.mac_addr || '').trim();
-
-const gatewayDisplayName = (beacon) =>
-  (beacon.gateway_name || beacon.gateway_id || '').trim();
+import { beaconDisplayName, gatewayDisplayName } from '../utils/beaconDisplay';
 
 export const RealTimeStatus = ({ currentUser }) => {
-  const [beacons, setBeacons] = useState({});
   const [searchQuery, setSearchQuery] = useState('');
   const [editingBeacon, setEditingBeacon] = useState(null);
-  const { socket, isConnected } = useSocket('/');
+  const { beacons, beaconList: allSorted, isConnected, updatesPerMin, mergeBeaconUpdates } = useBeacons();
   const isAdmin = currentUser?.role === 'admin';
-
-  useEffect(() => {
-    axios.get('/beacons')
-      .then(res => {
-        const beaconMap = {};
-        res.data.forEach(b => {
-          beaconMap[b.mac_addr] = b;
-        });
-        setBeacons(beaconMap);
-      })
-      .catch(err => console.error('Failed to fetch beacons', err));
-  }, []);
-
-  useEffect(() => {
-    if (!socket) return;
-    const onData = (data) => {
-      setBeacons(prev => {
-        const next = { ...prev };
-        data.forEach(b => {
-          next[b.mac_addr] = b;
-        });
-        return next;
-      });
-    };
-    socket.on('ADDED_DATA', onData);
-    return () => socket.off('ADDED_DATA', onData);
-  }, [socket]);
 
   const beaconList = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
-    return Object.values(beacons)
-      .filter(beacon => {
-        if (!q) return true;
-        const name = beaconDisplayName(beacon).toLowerCase();
-        const gateway = gatewayDisplayName(beacon).toLowerCase();
-        return name.includes(q) || gateway.includes(q);
-      })
-      .sort((a, b) => {
-        const byName = beaconDisplayName(a).localeCompare(
-          beaconDisplayName(b),
-          undefined,
-          { sensitivity: 'base', numeric: true }
-        );
-        if (byName !== 0) return byName;
-        return (a.mac_addr || '').localeCompare(b.mac_addr || '', undefined, { numeric: true });
-      });
-  }, [beacons, searchQuery]);
+    return allSorted.filter((beacon) => {
+      if (!q) return true;
+      const name = beaconDisplayName(beacon).toLowerCase();
+      const gateway = gatewayDisplayName(beacon).toLowerCase();
+      return name.includes(q) || gateway.includes(q);
+    });
+  }, [allSorted, searchQuery]);
 
   const allBeacons = Object.values(beacons);
   const activeCount = allBeacons.filter(b => b.status === 'in').length;
   const alertCount = allBeacons.filter(b => b.status === 'alert' || b.alert).length;
-
-  const applyBeaconUpdates = (updatedList) => {
-    if (!Array.isArray(updatedList) || updatedList.length === 0) return;
-    setBeacons(prev => {
-      const next = { ...prev };
-      updatedList.forEach(b => {
-        next[b.mac_addr] = b;
-      });
-      return next;
-    });
-  };
 
   return (
     <div className="p-8 max-w-7xl mx-auto flex flex-col gap-8">
@@ -102,7 +47,7 @@ export const RealTimeStatus = ({ currentUser }) => {
         <StatCard
           icon={<Activity className="text-accent-purple" />}
           label="Recent Activity"
-          value="14"
+          value={updatesPerMin}
           subValue="Updates/min"
         />
       </div>
@@ -115,13 +60,14 @@ export const RealTimeStatus = ({ currentUser }) => {
               <span className="flex h-2 w-2 rounded-full bg-accent-cyan animate-ping"></span>
             </h2>
             <div className="relative flex-1 max-w-md">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted w-4 h-4" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted w-4 h-4" aria-hidden="true" />
               <input
                 type="search"
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
                 placeholder="Search beacon or gateway name..."
                 className="input-field pl-10 py-2.5 text-sm"
+                aria-label="Search beacon or gateway name"
               />
             </div>
           </div>
@@ -154,7 +100,7 @@ export const RealTimeStatus = ({ currentUser }) => {
         beacon={editingBeacon}
         open={editingBeacon != null}
         onClose={() => setEditingBeacon(null)}
-        onSaved={applyBeaconUpdates}
+        onSaved={mergeBeaconUpdates}
       />
     </div>
   );

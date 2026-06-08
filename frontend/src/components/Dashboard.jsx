@@ -1,9 +1,6 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import axios from 'axios';
-import { useSocket } from '../hooks/useSocket';
-
-const beaconDisplayName = (beacon) =>
-  (beacon.nickname || beacon.name || beacon.mac_addr || '').trim();
+import React, { useMemo } from 'react';
+import { useBeacons } from '../hooks/useBeacons';
+import { beaconDisplayName } from '../utils/beaconDisplay';
 
 const chartMinTemp = 10;
 const chartMaxTemp = 45;
@@ -41,6 +38,7 @@ function TemperatureSvgChart({ data }) {
     y: tempToY(d.temp),
     name: d.beaconName,
     temp: d.temp,
+    key: d.mac,
   }));
 
   const polyline = points.map(p => `${p.x},${p.y}`).join(' ');
@@ -72,7 +70,7 @@ function TemperatureSvgChart({ data }) {
         />
 
         {points.map((p) => (
-          <g key={`${p.name}-${p.temp}`}>
+          <g key={p.key}>
             <circle cx={p.x} cy={p.y} r="4" fill="#00b8d4" />
             <text x={p.x} y={p.y - 10} textAnchor="middle" fontSize="11" fill="currentColor" opacity="0.85">{p.temp}°C</text>
             <text
@@ -95,52 +93,13 @@ function TemperatureSvgChart({ data }) {
 }
 
 export const Dashboard = () => {
-  const [beacons, setBeacons] = useState({});
-  const { socket, isConnected } = useSocket('/');
-
-  useEffect(() => {
-    axios.get('/beacons')
-      .then(res => {
-        const beaconMap = {};
-        res.data.forEach(b => {
-          beaconMap[b.mac_addr] = b;
-        });
-        setBeacons(beaconMap);
-      })
-      .catch(err => console.error('Failed to fetch beacons', err));
-  }, []);
-
-  useEffect(() => {
-    if (!socket) return;
-    const onData = (data) => {
-      setBeacons(prev => {
-        const next = { ...prev };
-        data.forEach(b => {
-          next[b.mac_addr] = b;
-        });
-        return next;
-      });
-    };
-    socket.on('ADDED_DATA', onData);
-    return () => socket.off('ADDED_DATA', onData);
-  }, [socket]);
-
-  const beaconList = useMemo(() => (
-    Object.values(beacons).sort((a, b) => {
-      const byName = beaconDisplayName(a).localeCompare(
-        beaconDisplayName(b),
-        undefined,
-        { sensitivity: 'base', numeric: true }
-      );
-      if (byName !== 0) return byName;
-      return (a.mac_addr || '').localeCompare(b.mac_addr || '', undefined, { numeric: true });
-    })
-  ), [beacons]);
+  const { beaconList, isConnected } = useBeacons();
 
   const chartData = useMemo(() => (
     beaconList
       .filter(b => b.temp != null)
       .map(b => ({
+        mac: b.mac_addr,
         beaconName: beaconDisplayName(b),
         temp: Number(b.temp),
       }))

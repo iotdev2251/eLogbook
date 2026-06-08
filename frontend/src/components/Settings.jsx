@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import axios from '../api/axiosSetup';
 import { UserPlus, Trash2, Shield, User } from 'lucide-react';
 
 export const Settings = ({ currentUser }) => {

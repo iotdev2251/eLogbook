@@ -1,25 +1,42 @@
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import axios, { configureAxios } from './api/axiosSetup';
 import { Dashboard } from './components/Dashboard';
 import { RealTimeStatus } from './components/RealTimeStatus';
 import { Login } from './components/Login';
 import { Settings } from './components/Settings';
+import { UserAvatar } from './components/UserAvatar';
 import { LayoutDashboard, History, Settings as SettingsIcon, Bell, LogOut, Radio } from 'lucide-react';
-
-axios.defaults.withCredentials = true;
 
 function AppContent() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [now, setNow] = useState(() => new Date());
   const location = useLocation();
   const navigate = useNavigate();
+  const isAdmin = user?.role === 'admin';
+
+  useEffect(() => {
+    configureAxios({
+      onUnauthorized: () => {
+        setUser(null);
+        if (location.pathname !== '/login') {
+          navigate('/login', { replace: true });
+        }
+      },
+    });
+  }, [location.pathname, navigate]);
 
   useEffect(() => {
     axios.get('/auth/me')
       .then(res => setUser(res.data))
       .catch(() => setUser(null))
       .finally(() => setLoading(false));
+  }, []);
+
+  useEffect(() => {
+    const id = setInterval(() => setNow(new Date()), 1000);
+    return () => clearInterval(id);
   }, []);
 
   const handleLogout = async () => {
@@ -29,6 +46,8 @@ function AppContent() {
       navigate('/login');
     } catch (err) {
       console.error('Logout failed', err);
+      setUser(null);
+      navigate('/login');
     }
   };
 
@@ -57,11 +76,11 @@ function AppContent() {
     alerts: 'Alerts',
     settings: 'Settings',
   };
-  const activeTitle = tabTitleMap[activeTab] || activeTab;
+  const activeTitle = tabTitleMap[activeTab] || 'Page Not Found';
 
   return (
     <div className="min-h-screen flex bg-background text-foreground">
-      <nav className="w-64 border-r border-border flex flex-col p-6 gap-8 bg-card">
+      <nav className="w-64 border-r border-border flex flex-col p-6 gap-8 bg-card" aria-label="Main navigation">
         <div className="flex items-center gap-3 px-2">
           <div className="w-8 h-8 rounded-lg accent-gradient flex items-center justify-center">
             <RadioIcon />
@@ -96,14 +115,16 @@ function AppContent() {
             active={activeTab === 'alerts'}
             onClick={() => navigate('/alerts')}
           />
-          <div className="mt-4 pt-4 border-t border-border">
-            <NavItem
-              icon={<SettingsIcon size={20} />}
-              label="Settings"
-              active={activeTab === 'settings'}
-              onClick={() => navigate('/settings')}
-            />
-          </div>
+          {isAdmin && (
+            <div className="mt-4 pt-4 border-t border-border">
+              <NavItem
+                icon={<SettingsIcon size={20} />}
+                label="Settings"
+                active={activeTab === 'settings'}
+                onClick={() => navigate('/settings')}
+              />
+            </div>
+          )}
         </div>
 
         <div className="mt-auto flex flex-col gap-4">
@@ -115,9 +136,7 @@ function AppContent() {
             <span className="font-medium text-sm">Sign Out</span>
           </button>
           <div className="p-4 glass-panel flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-slate-200 dark:bg-gray-700 overflow-hidden flex-shrink-0">
-              <img src={`https://ui-avatars.com/api/?name=${user.username}&background=random`} alt={user.username} />
-            </div>
+            <UserAvatar username={user.username} />
             <div className="overflow-hidden">
               <p className="text-sm font-bold truncate">{user.username}</p>
               <p className="text-[10px] text-muted uppercase tracking-widest">{user.role}</p>
@@ -131,8 +150,8 @@ function AppContent() {
           <h2 className="text-sm text-muted font-medium uppercase tracking-widest">
             {activeTitle} View
           </h2>
-          <div className="text-xs text-muted">
-            System Time: {new Date().toLocaleTimeString()}
+          <div className="text-xs text-muted" aria-live="polite">
+            System Time: {now.toLocaleTimeString()}
           </div>
         </header>
 
@@ -142,6 +161,7 @@ function AppContent() {
           <Route path="/settings" element={<Settings currentUser={user} />} />
           <Route path="/history" element={<PlaceholderView name="History" />} />
           <Route path="/alerts" element={<PlaceholderView name="Alerts" />} />
+          <Route path="*" element={<NotFoundView />} />
         </Routes>
       </main>
     </div>
@@ -155,6 +175,13 @@ const PlaceholderView = ({ name }) => (
   </div>
 );
 
+const NotFoundView = () => (
+  <div className="p-12 text-center text-muted">
+    <h2 className="text-2xl font-bold mb-4 text-foreground">Page not found</h2>
+    <p>The page you requested does not exist.</p>
+  </div>
+);
+
 function App() {
   return (
     <Router>
@@ -165,7 +192,9 @@ function App() {
 
 const NavItem = ({ icon, label, active, onClick }) => (
   <button
+    type="button"
     onClick={onClick}
+    aria-current={active ? 'page' : undefined}
     className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 ${
       active
         ? 'bg-cyan-100 text-cyan-800 ring-1 ring-cyan-300 dark:bg-accent-cyan/10 dark:text-accent-cyan dark:ring-accent-cyan/20'
@@ -178,7 +207,7 @@ const NavItem = ({ icon, label, active, onClick }) => (
 );
 
 const RadioIcon = () => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-white">
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-white" aria-hidden="true">
     <path d="M4.9 19.1C1 15.2 1 8.8 4.9 4.9" />
     <path d="M7.8 16.2c-2.3-2.3-2.3-6.1 0-8.4" />
     <circle cx="12" cy="12" r="2" />

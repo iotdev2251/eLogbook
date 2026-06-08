@@ -61,6 +61,14 @@
 
 ---
 
+## [2026-06-03] UX / 開發體驗（第三階段）
+
+- Vite `/auth` proxy、401 自動登出
+- 共用 `useBeacons`、Error Boundary、真實 Updates/min
+- Settings 僅 admin、404 頁、狀態可讀標籤
+
+---
+
 ## [2026-06-03] 安全強化（第二階段）
 
 - 強制 `JWT_SECRET`；Socket.IO 需登入
