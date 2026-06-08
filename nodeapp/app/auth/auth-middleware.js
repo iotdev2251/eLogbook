@@ -1,27 +1,19 @@
 import jwt from 'jsonwebtoken';
-import { c } from '../../config/constant.js';
+import { getJwtSecret } from '../../config/jwt.js';
 import { loggerFactory } from '../../config/logger.js';
+import { extractBearerToken } from './token-utils.js';
 
 const logger = loggerFactory('auth-middleware');
-const JWT_SECRET = process.env.JWT_SECRET || 'your_super_secret_key_change_in_prod';
 
 export const authMiddleware = (req, res, next) => {
-    // Check Authorization header or cookies
-    const authHeader = req.headers.authorization;
-    let token = '';
-
-    if (authHeader && authHeader.startsWith('Bearer ')) {
-        token = authHeader.substring(7, authHeader.length);
-    } else if (req.cookies && req.cookies.token) {
-        token = req.cookies.token;
-    }
+    const token = req.cookies?.token || extractBearerToken(req.headers.authorization);
 
     if (!token) {
         return res.status(401).json({ msg: 'No token provided, authorization denied' });
     }
 
     try {
-        const decoded = jwt.verify(token, JWT_SECRET);
+        const decoded = jwt.verify(token, getJwtSecret());
         req.user = decoded.user;
         next();
     } catch (err) {

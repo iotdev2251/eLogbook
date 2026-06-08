@@ -2,16 +2,20 @@ import express from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import pkg from '@prisma/client';
+import { getJwtSecret } from '../../config/jwt.js';
 import { authMiddleware, adminMiddleware } from './auth-middleware.js';
+import { AUTH_COOKIE_NAME, getAuthCookieOptions, getClearAuthCookieOptions } from './cookie-options.js';
+import { loginRateLimiter } from './login-rate-limit.js';
 
 const { PrismaClient } = pkg;
 const prisma = new PrismaClient();
 const router = express.Router();
-const JWT_SECRET = process.env.JWT_SECRET || 'your_super_secret_key_change_in_prod';
+
+const ALLOWED_ROLES = new Set(['admin', 'viewer']);
 
 // @route   POST /auth/login
 // @desc    Authenticate user & get token
-router.post('/login', async (req, res) => {
+router.post('/login', loginRateLimiter, async (req, res) => {
     const { username, password } = req.body;
 
     try {
@@ -37,12 +41,11 @@ router.post('/login', async (req, res) => {
 
         jwt.sign(
             payload,
-            JWT_SECRET,
+            getJwtSecret(),
             { expiresIn: '7 days' },
             (err, token) => {
                 if (err) throw err;
-                // Set cookie for browser clients
-                res.cookie('token', token, { httpOnly: true, maxAge: 7 * 24 * 60 * 60 * 1000 });
+                res.cookie(AUTH_COOKIE_NAME, token, getAuthCookieOptions());
                 res.json({ token, user: payload.user });
             }
         );
@@ -69,7 +72,7 @@ router.get('/me', authMiddleware, async (req, res) => {
 
 // @route   POST /auth/logout
 router.post('/logout', (req, res) => {
-    res.clearCookie('token');
+    res.clearCookie(AUTH_COOKIE_NAME, getClearAuthCookieOptions());
     res.json({ msg: 'Logged out successfully' });
 });
 
@@ -91,8 +94,18 @@ router.get('/users', [authMiddleware, adminMiddleware], async (req, res) => {
 // @desc    Create a new user (Admin only)
 router.post('/users', [authMiddleware, adminMiddleware], async (req, res) => {
     const { username, password, role } = req.body;
+    const trimmedUsername = typeof username === 'string' ? username.trim() : '';
+    const normalizedRole = ALLOWED_ROLES.has(role) ? role : 'viewer';
+
+    if (trimmedUsername.length < 2) {
+        return res.status(400).json({ msg: 'Username must be at least 2 characters' });
+    }
+    if (typeof password !== 'string' || password.length < 8) {
+        return res.status(400).json({ msg: 'Password must be at least 8 characters' });
+    }
+
     try {
-        let user = await prisma.user.findUnique({ where: { username } });
+        let user = await prisma.user.findUnique({ where: { username: trimmedUsername } });
         if (user) {
             return res.status(400).json({ msg: 'User already exists' });
         }
@@ -100,9 +113,9 @@ router.post('/users', [authMiddleware, adminMiddleware], async (req, res) => {
         const hashedPassword = await bcrypt.hash(password, 10);
         user = await prisma.user.create({
             data: {
-                username,
+                username: trimmedUsername,
                 password: hashedPassword,
-                role: role || 'viewer'
+                role: normalizedRole
             },
             select: { id: true, username: true, role: true }
         });

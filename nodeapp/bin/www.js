@@ -5,6 +5,7 @@
  */
 
 import { myApp } from '../app/app.js';
+import { socketAuthMiddleware } from '../app/auth/socket-auth.js';
 import { createServer as createServerHttps } from 'https';
 import debugPkg from 'debug';
 import { Server } from 'socket.io'
@@ -43,8 +44,10 @@ const io = new Server(httpsServer)
 async function start() {
   await myApp.init(io)
 
+  io.use(socketAuthMiddleware)
+
   io.on("connection", (socket) => {
-    console.log("Socket connected: " + socket.id)
+    console.log("Socket connected: " + socket.id + " user=" + socket.user?.username)
   })
 
   httpsServer.listen(port);

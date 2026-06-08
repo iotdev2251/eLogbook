@@ -18,17 +18,43 @@ if [ ! -f "$APP_DIR/.env" ]; then
     cp "$APP_DIR/.env.default" "$APP_DIR/.env"
 fi
 
+# Ensure JWT_SECRET exists and is long enough
+if ! grep -q '^JWT_SECRET=.\{32,\}' "$APP_DIR/.env" 2>/dev/null; then
+    if grep -q '^JWT_SECRET=' "$APP_DIR/.env" 2>/dev/null; then
+        sed -i '/^JWT_SECRET=/d' "$APP_DIR/.env"
+    fi
+    echo "🔐 Generating JWT_SECRET..."
+    echo "JWT_SECRET=$(openssl rand -hex 32)" >> "$APP_DIR/.env"
+fi
+
+# Load root env for downstream files
+set -a
+# shellcheck disable=SC1091
+source "$APP_DIR/.env"
+set +a
+
+MQTT_USER="${MQTT_USER:-temptrack}"
+MQTT_PASSWORD="${MQTT_PASSWORD:-changeme_mqtt_please_rotate}"
+
+if [ "$MQTT_PASSWORD" = "changeme_mqtt_please_rotate" ]; then
+    echo "⚠️  Warning: using default MQTT_PASSWORD — change MQTT_PASSWORD in .env for production"
+fi
+
 if [ ! -f "$APP_DIR/nodeapp/.env" ]; then
-    echo "⚠️  Nodeapp .env missing, copying from default..."
-    # Note: We use the production setting here (PostgreSQL)
+    echo "⚠️  Nodeapp .env missing, creating from root .env values..."
     cat > "$APP_DIR/nodeapp/.env" <<EOF
 DATABASE_URL="postgresql://docker:docker@postgresql-db:5432/elogbook?schema=public"
 NODE_PORT=3011
 PORT=3011
 MQTT_HOST=mqtt-broker
 MQTT_PORT=1883
+MQTT_USER=${MQTT_USER}
+MQTT_PASSWORD=${MQTT_PASSWORD}
+JWT_SECRET=${JWT_SECRET}
 EOF
 fi
+
+chmod +x "$APP_DIR/mosquitto/config/docker-entrypoint.sh" 2>/dev/null || true
 
 # 3. Stop existing containers
 echo "🛑 Stopping existing services..."
@@ -45,4 +71,5 @@ docker compose -f "$APP_DIR/docker-compose.yml" ps
 echo "------------------------------------------------"
 echo "✅ eLogbook is now running!"
 echo "📍 Access GUI at: https://<your-server-ip>:3011"
+echo "🔑 Ensure JWT_SECRET and MQTT_PASSWORD are set in .env"
 echo "------------------------------------------------"

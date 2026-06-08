@@ -7,7 +7,6 @@ import { logger } from '../config/logger.js';
 import expressPinoLogger from 'express-pino-logger';
 import { fileURLToPath } from 'url';
 
-import indexRouter from './routes/index.js';
 import { addBeaconRouter } from './beacon/beacon-router.js'
 import { addHistoryRouter } from './history/history-router.js'
 
@@ -29,7 +28,18 @@ function initApp() {
     const app = express();
 
     // app.use(expressPino);
-    // app.use(helmet());
+    app.use(helmet({
+        contentSecurityPolicy: {
+            directives: {
+                defaultSrc: ["'self'"],
+                scriptSrc: ["'self'", "'unsafe-inline'"],
+                styleSrc: ["'self'", "'unsafe-inline'"],
+                imgSrc: ["'self'", "data:", "https://ui-avatars.com"],
+                connectSrc: ["'self'", "wss:", "ws:"],
+            },
+        },
+        crossOriginResourcePolicy: { policy: 'cross-origin' },
+    }));
     app.use(express.json());
     app.use(express.urlencoded({ extended: false }));
     app.use(cookieParser());
@@ -44,6 +54,7 @@ function initApp() {
 
 import { authRouter } from './auth/auth-router.js';
 import { authMiddleware } from './auth/auth-middleware.js';
+import { getJwtSecret } from '../config/jwt.js';
 
 class MyApp {
     constructor(){
@@ -59,6 +70,8 @@ class MyApp {
     }
 
     async init(io) {
+        getJwtSecret()
+
         const paramRepository = new ParamRepository()
         await paramRepository.init()
 

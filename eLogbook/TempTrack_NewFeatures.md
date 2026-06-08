@@ -61,6 +61,14 @@
 
 ---
 
+## [2026-06-03] 安全強化（第二階段）
+
+- 強制 `JWT_SECRET`；Socket.IO 需登入
+- Helmet、安全 Cookie、登入限流
+- MQTT 需帳密（`.env` 設定）；`deploy.sh` 可自動產生 JWT
+
+---
+
 ## [2026-06-03] 後端穩定性修復（第一階段）
 
 - History 單一 Beacon 查詢路由修正

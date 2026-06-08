@@ -26,14 +26,21 @@ class MyMqttClient{
     _initMqtt(){
         const that = this
 
-        const client = mqtt.connect(connectUrl, {
+        const connectOptions = {
             clientId,
             clean: true,
             connectTimeout: 4000,
-            username: 'emqx',
-            password: 'public',
             reconnectPeriod: 1000,
-        })
+        }
+
+        if (c.MQTT_USER && c.MQTT_PASSWORD) {
+            connectOptions.username = c.MQTT_USER
+            connectOptions.password = c.MQTT_PASSWORD
+        } else {
+            logger.error('MQTT_USER and MQTT_PASSWORD must be set in environment')
+        }
+
+        const client = mqtt.connect(connectUrl, connectOptions)
 
         client.on('connect', async () => {
             logger.info('MQTT Broker Connected')

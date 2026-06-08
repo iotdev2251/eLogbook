@@ -154,6 +154,71 @@ docker compose up --build -d
 
 ---
 
+## [2026-06-03] 第二階段安全強化
+
+### 修改內容
+
+1. **JWT**
+   - 強制 `JWT_SECRET`（至少 32 字元，禁止 placeholder）
+   - 未設定時服務拒絕啟動
+   - `deploy.sh` 會自動產生 `JWT_SECRET`
+
+2. **Socket.IO**
+   - 連線需有效 JWT（Cookie 或 Bearer）
+   - 前端 `withCredentials: true`，依協定設定 `secure`
+
+3. **HTTP 安全**
+   - 啟用 `helmet`（SPA 適用 CSP）
+   - Auth Cookie：`secure` + `sameSite: lax`
+   - 登入 API 限流（15 分鐘 / 20 次）
+
+4. **MQTT**
+   - Mosquitto 關閉匿名連線
+   - 啟動時依 `.env` 的 `MQTT_USER` / `MQTT_PASSWORD` 產生 passwd
+   - Node MQTT client 改讀環境變數
+
+5. **使用者管理**
+   - 建立使用者：密碼至少 8 字元、角色限 `admin` / `viewer`
+
+### 部署注意（重要）
+
+更新後請在 Ubuntu 執行 `deploy.sh`，或手動在 **根目錄 `.env`** 加入：
+
+```bash
+JWT_SECRET=$(openssl rand -hex 32)
+MQTT_USER=temptrack
+MQTT_PASSWORD=<請改成強密碼>
+```
+
+若只 `git pull` 而未設定 `JWT_SECRET`，app 容器會無法啟動。
+
+### 影響檔案
+
+- `nodeapp/config/jwt.js`（新增）
+- `nodeapp/app/auth/*`
+- `nodeapp/app/app.js`
+- `nodeapp/bin/www.js`
+- `nodeapp/app/mqtt/mqtt-client.js`
+- `nodeapp/package.json`
+- `mosquitto/config/mosquitto.conf`
+- `mosquitto/config/docker-entrypoint.sh`（新增）
+- `docker-compose.yml`
+- `.env.default`
+- `scripts/deploy.sh`
+- `frontend/src/hooks/useSocket.js`
+
+### Ubuntu 更新步驟
+
+```bash
+cd ~/eLogbook
+docker compose down
+sudo chown -R $USER:$USER nodeapp
+git fetch origin && git reset --hard origin/main
+bash scripts/deploy.sh
+```
+
+---
+
 ## [2026-06-03] 第一階段穩定性修復
 
 ### 修改內容

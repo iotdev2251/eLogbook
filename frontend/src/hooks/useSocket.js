@@ -6,19 +6,24 @@ export const useSocket = (url) => {
   const [isConnected, setIsConnected] = useState(false);
 
   useEffect(() => {
+    const isSecure = window.location.protocol === 'https:';
+
     const socketInstance = io(url, {
-      secure: true,
-      rejectUnauthorized: false // Since the server uses self-signed certs
+      withCredentials: true,
+      secure: isSecure,
+      rejectUnauthorized: false,
     });
 
     socketInstance.on('connect', () => {
       setIsConnected(true);
-      console.log('Socket connected');
     });
 
     socketInstance.on('disconnect', () => {
       setIsConnected(false);
-      console.log('Socket disconnected');
+    });
+
+    socketInstance.on('connect_error', () => {
+      setIsConnected(false);
     });
 
     setSocket(socketInstance);

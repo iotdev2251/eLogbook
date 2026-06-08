@@ -32,6 +32,7 @@
     "dotenv": "^10.0.0",
     "ejs": "^3.1.6",
     "express": "^4.17.1",
+    "express-rate-limit": "^7.5.0",
     "express-pino-logger": "^7.0.0",
     "file-stream-rotator": "^0.6.1",
     "got": "^11.8.3",

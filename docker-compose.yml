@@ -30,6 +30,10 @@ services:
         - ./mosquitto/log:/mosquitto/log
       ports:
         - ${MQTT_PORT}:${MQTT_DOCKER_PORT}
+      environment:
+        - MQTT_USER=${MQTT_USER}
+        - MQTT_PASSWORD=${MQTT_PASSWORD}
+      entrypoint: ["/bin/sh", "/mosquitto/config/docker-entrypoint.sh"]
 
     app:
       build:
@@ -53,8 +57,10 @@ services:
         - ./nodeapp/node_modules:/app/node_modules
         - ./frontend:/frontend
         - /frontend/node_modules
-      depends_on: 
+      depends_on:
         postgresql-db:
           condition: service_healthy
+        mqtt-broker:
+          condition: service_started
       stdin_open: true
       tty: true
