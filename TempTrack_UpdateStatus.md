@@ -154,6 +154,35 @@ docker compose up --build -d
 
 ---
 
+## [2026-06-08] 修復 Beacon 資料不即時更新
+
+### 原因
+
+1. **MQTT 匿名發布被關閉** — 現場 Gateway 不帶帳密發布，broker 拒絕訊息，Last Seen 停止更新
+2. **Socket TLS** — 以 `http://` 開啟時 WebSocket 可能未走 HTTPS
+
+### 修復
+
+- Mosquitto 恢復 `allow_anonymous true`（Gateway 可發布；Node app 仍用帳密訂閱）
+- MQTT 連線/訂閱錯誤寫入 log
+- 修正 topic MAC 解析
+- Socket 在正式環境（port 3011）強制使用 TLS
+- MQTT broker 加入 healthcheck，app 等 broker 就緒後才啟動
+
+### Ubuntu 更新
+
+```bash
+cd ~/eLogbook
+git fetch origin && git reset --hard origin/main
+docker compose down
+docker compose up -d --build
+docker compose logs app --tail 20 | grep -i mqtt
+```
+
+請用 **https://10.0.56.130:3011** 開啟（不要用 `http://`）
+
+---
+
 ## [2026-06-08] 修復 MQTT broker 重啟迴圈
 
 ### 原因

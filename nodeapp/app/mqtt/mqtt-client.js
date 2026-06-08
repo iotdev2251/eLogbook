@@ -18,9 +18,27 @@ class MyMqttClient{
     }
     
     async init(){
-        const that = this
-
         this.mqttClient = this._initMqtt()
+    }
+
+    _subscribeAll(client) {
+        const topics = []
+        for (const mac in this._mqttProcessor.getAllGateways()){
+            topics.push(GET_MQTT_TOPIC(mac))
+        }
+
+        if (topics.length === 0) {
+            logger.warn('No gateway topics to subscribe — check gateway table in database')
+            return
+        }
+
+        client.subscribe(topics, (err) => {
+            if (err) {
+                logger.error('MQTT subscribe failed: %s', err.message)
+            } else {
+                logger.info('Subscribed to %d gateway topics', topics.length)
+            }
+        })
     }
 
     _initMqtt(){
@@ -30,29 +48,33 @@ class MyMqttClient{
             clientId,
             clean: true,
             connectTimeout: 4000,
-            reconnectPeriod: 1000,
+            reconnectPeriod: 2000,
         }
 
         if (c.MQTT_USER && c.MQTT_PASSWORD) {
             connectOptions.username = c.MQTT_USER
             connectOptions.password = c.MQTT_PASSWORD
         } else {
-            logger.error('MQTT_USER and MQTT_PASSWORD must be set in environment')
+            logger.warn('MQTT_USER/MQTT_PASSWORD not set — connecting without credentials')
         }
 
         const client = mqtt.connect(connectUrl, connectOptions)
 
-        client.on('connect', async () => {
-            logger.info('MQTT Broker Connected')
+        client.on('connect', () => {
+            logger.info('MQTT broker connected (%s)', connectUrl)
+            that._subscribeAll(client)
+        })
 
-            const topics = []
-            for (const mac in that._mqttProcessor.getAllGateways()){
-                topics.push(GET_MQTT_TOPIC(mac))
-            }
+        client.on('reconnect', () => {
+            logger.info('MQTT broker reconnecting...')
+        })
 
-            client.subscribe(topics, () => {
-                logger.info(`Subscribe to ${topics.length} topics : '${topics}'`)
-            })
+        client.on('offline', () => {
+            logger.warn('MQTT broker offline')
+        })
+
+        client.on('error', (err) => {
+            logger.error('MQTT client error: %s', err.message)
         })
 
         client.on('message', async (topic, payload) => {
@@ -71,9 +93,10 @@ class MyMqttClient{
 
     _extractMacAddressFromTopic(topic){
         const startPos = topic.indexOf("/") + 1
-        const endPos = topic.indexOf("/", startPos) - 1
-
-        const mac = topic.substr(startPos, endPos)
+        const nextSlash = topic.indexOf("/", startPos)
+        const mac = nextSlash > startPos
+            ? topic.substring(startPos, nextSlash)
+            : topic.substring(startPos)
 
         return normalizeMac(mac)
     }

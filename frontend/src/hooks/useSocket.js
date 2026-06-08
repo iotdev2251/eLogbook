@@ -6,11 +6,13 @@ export const useSocket = (url) => {
   const [isConnected, setIsConnected] = useState(false);
 
   useEffect(() => {
-    const isSecure = window.location.protocol === 'https:';
+    // Node server listens on HTTPS (port 3011); match TLS when not on Vite dev server
+    const isDevServer = import.meta.env.DEV && window.location.port === '5173';
+    const useTls = !isDevServer || window.location.protocol === 'https:';
 
     const socketInstance = io(url, {
       withCredentials: true,
-      secure: isSecure,
+      secure: useTls,
       rejectUnauthorized: false,
     });
 
