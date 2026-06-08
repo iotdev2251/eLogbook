@@ -154,6 +154,30 @@ docker compose up --build -d
 
 ---
 
+## [2026-06-08] 修復 MQTT broker 重啟迴圈
+
+### 原因
+
+`mosquitto_passwd -c` 在 `passwd` 檔已存在時會失敗，導致 mqtt-broker 不斷 Restarting。
+
+### 修復
+
+- 檔案已存在時改用 `mosquitto_passwd -b` 更新帳密
+- 僅在檔案不存在時使用 `-c` 建立
+
+### Ubuntu 更新
+
+```bash
+cd ~/eLogbook
+git fetch origin && git reset --hard origin/main
+docker compose down
+sudo rm -f mosquitto/config/passwd
+docker compose up -d
+docker compose ps
+```
+
+---
+
 ## [2026-06-03] 第三階段 UX / 開發體驗
 
 ### 修改內容
