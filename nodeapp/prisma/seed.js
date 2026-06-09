@@ -3,7 +3,51 @@ import bcrypt from 'bcryptjs'
 
 const prisma = new pkg.PrismaClient()
 
+const LEGACY_GATEWAY_IDS = ['Check Point Gateway', 'Check Point']
+const WORKSHOP_ID = 'Workshop'
+
+/** Rename existing DB gateway (seed alone does not update old primary keys). */
+async function migrateLegacyGatewayToWorkshop() {
+  for (const oldId of LEGACY_GATEWAY_IDS) {
+    const legacy = await prisma.gateway.findUnique({ where: { id: oldId } })
+    if (!legacy) continue
+
+    await prisma.gateway.upsert({
+      where: { id: WORKSHOP_ID },
+      update: {
+        name: WORKSHOP_ID,
+        mac_addr: legacy.mac_addr,
+        check_point: legacy.check_point,
+      },
+      create: {
+        id: WORKSHOP_ID,
+        name: WORKSHOP_ID,
+        mac_addr: legacy.mac_addr,
+        check_point: legacy.check_point,
+      },
+    })
+
+    await prisma.beacon.updateMany({
+      where: { gateway_id: oldId },
+      data: { gateway_id: WORKSHOP_ID },
+    })
+
+    await prisma.beacon_history.updateMany({
+      where: { gateway_name: oldId },
+      data: { gateway_name: WORKSHOP_ID },
+    })
+
+    if (oldId !== WORKSHOP_ID) {
+      await prisma.gateway.delete({ where: { id: oldId } })
+    }
+
+    console.log(`Migrated gateway "${oldId}" → "${WORKSHOP_ID}"`)
+  }
+}
+
 async function main() {
+  await migrateLegacyGatewayToWorkshop()
+
   const hashedPassword = await bcrypt.hash('admin123', 10)
   const adminUser = await prisma.user.upsert({
     where: { username: 'admin' },
@@ -15,11 +59,11 @@ async function main() {
     }
   })
   const gateway1 = await prisma.gateway.upsert({
-    where: { id: 'Workshop' },
-    update: { name: 'Workshop' },
+    where: { id: WORKSHOP_ID },
+    update: { name: WORKSHOP_ID },
     create: {
-      id: 'Workshop',
-      name: 'Workshop',
+      id: WORKSHOP_ID,
+      name: WORKSHOP_ID,
       mac_addr: "EB42F1F2B7B2",
       check_point: true
     },
@@ -49,7 +93,7 @@ async function newBeacon() {
       name: "Beacon 1",
       nickname: "Beacon 1",
       mac_addr: "80ECCC0008B6",
-      gateway_id: 'Workshop',
+      gateway_id: WORKSHOP_ID,
       temp: 242,
       battery: 0,
       rssi: 0,
@@ -64,7 +108,7 @@ async function newBeacon() {
       name: "Beacon 2",
       nickname: "Beacon 2",
       mac_addr: "80ECCB002111",
-      gateway_id: 'Workshop',
+      gateway_id: WORKSHOP_ID,
       temp: 242,
       battery: 0,
       rssi: 0,
