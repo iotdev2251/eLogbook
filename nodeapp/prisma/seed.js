@@ -102,12 +102,16 @@ async function newBeacon() {
   })
   const b2 = await prisma.beacon.upsert({
     where: { id: 'B2' },
-    update: {},
+    update: {
+      name: 'OfficeDesk',
+      nickname: 'OfficeDesk',
+      mac_addr: 'CE6299527263',
+    },
     create: {
       id: 'B2',
-      name: "Beacon 2",
-      nickname: "Beacon 2",
-      mac_addr: "80ECCB002111",
+      name: 'OfficeDesk',
+      nickname: 'OfficeDesk',
+      mac_addr: 'CE6299527263',
       gateway_id: WORKSHOP_ID,
       temp: 242,
       battery: 0,
