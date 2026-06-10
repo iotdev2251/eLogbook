@@ -134,42 +134,36 @@ async function main() {
   param()
 }
 
-async function newBeacon() {
-  const b1 = await prisma.beacon.upsert({
-    where: { id: 'B1' },
-    update: {},
+const NAMED_BEACONS = [
+  { id: 'B1', mac: '80ECCC0008B6', nickname: 'Beacon 1', gateway_id: WORKSHOP_ID },
+  { id: 'B2', mac: '80ECCB002111', nickname: 'Beacon 2', gateway_id: OFFICE_DESK_ID },
+  { id: 'B3', mac: '80ECCC0006D1', nickname: 'Beacon 3', gateway_id: WORKSHOP_ID },
+]
+
+async function upsertNamedBeacon({ id, mac, nickname, gateway_id }) {
+  return prisma.beacon.upsert({
+    where: { mac_addr: mac },
+    update: { name: nickname, nickname, gateway_id },
     create: {
-      id: 'B1',
-      name: "Beacon 1",
-      nickname: "Beacon 1",
-      mac_addr: "80ECCC0008B6",
-      gateway_id: WORKSHOP_ID,
+      id,
+      name: nickname,
+      nickname,
+      mac_addr: mac,
+      gateway_id,
       temp: 242,
       battery: 0,
       rssi: 0,
-      status: 'in'
-    }
-  })
-  const b2 = await prisma.beacon.upsert({
-    where: { id: 'B2' },
-    update: {
-      name: 'Beacon 2',
-      nickname: 'Beacon 2',
-      mac_addr: '80ECCB002111',
+      status: 'in',
     },
-    create: {
-      id: 'B2',
-      name: 'Beacon 2',
-      nickname: 'Beacon 2',
-      mac_addr: '80ECCB002111',
-      gateway_id: WORKSHOP_ID,
-      temp: 242,
-      battery: 0,
-      rssi: 0,
-      status: 'in'
-    }
   })
-  console.log({b1, b2})
+}
+
+async function newBeacon() {
+  const results = []
+  for (const beacon of NAMED_BEACONS) {
+    results.push(await upsertNamedBeacon(beacon))
+  }
+  console.log({ beacons: results.map((b) => ({ mac: b.mac_addr, nickname: b.nickname })) })
 }
 
 async function param() {
