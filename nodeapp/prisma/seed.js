@@ -5,6 +5,9 @@ const prisma = new pkg.PrismaClient()
 
 const LEGACY_GATEWAY_IDS = ['Check Point Gateway', 'Check Point']
 const WORKSHOP_ID = 'Workshop'
+const OFFICE_DESK_ID = 'OfficeDesk'
+const OFFICE_DESK_MAC = 'CE6299527263'
+const LEGACY_GATEWAY_02_ID = 'Gateway 02'
 
 /** Rename existing DB gateway (seed alone does not update old primary keys). */
 async function migrateLegacyGatewayToWorkshop() {
@@ -45,8 +48,52 @@ async function migrateLegacyGatewayToWorkshop() {
   }
 }
 
+async function migrateGateway02ToOfficeDesk() {
+  const legacy = await prisma.gateway.findUnique({ where: { id: LEGACY_GATEWAY_02_ID } })
+  if (!legacy) return
+
+  await prisma.gateway.upsert({
+    where: { id: OFFICE_DESK_ID },
+    update: {
+      name: OFFICE_DESK_ID,
+      mac_addr: OFFICE_DESK_MAC,
+      check_point: legacy.check_point,
+    },
+    create: {
+      id: OFFICE_DESK_ID,
+      name: OFFICE_DESK_ID,
+      mac_addr: OFFICE_DESK_MAC,
+      check_point: legacy.check_point,
+    },
+  })
+
+  await prisma.beacon.updateMany({
+    where: { gateway_id: LEGACY_GATEWAY_02_ID },
+    data: { gateway_id: OFFICE_DESK_ID },
+  })
+
+  await prisma.beacon_history.updateMany({
+    where: { gateway_name: LEGACY_GATEWAY_02_ID },
+    data: { gateway_name: OFFICE_DESK_ID },
+  })
+
+  await prisma.gateway.delete({ where: { id: LEGACY_GATEWAY_02_ID } })
+  console.log(`Migrated gateway "${LEGACY_GATEWAY_02_ID}" → "${OFFICE_DESK_ID}"`)
+}
+
+/** CE6299527263 is OfficeDesk gateway MAC — not a beacon. */
+async function fixMisassignedOfficeDeskBeacon() {
+  const mistaken = await prisma.beacon.findUnique({ where: { mac_addr: OFFICE_DESK_MAC } })
+  if (mistaken) {
+    await prisma.beacon.delete({ where: { mac_addr: OFFICE_DESK_MAC } })
+    console.log(`Removed mistaken beacon for gateway MAC ${OFFICE_DESK_MAC}`)
+  }
+}
+
 async function main() {
   await migrateLegacyGatewayToWorkshop()
+  await migrateGateway02ToOfficeDesk()
+  await fixMisassignedOfficeDeskBeacon()
 
   const hashedPassword = await bcrypt.hash('admin123', 10)
   const adminUser = await prisma.user.upsert({
@@ -69,12 +116,15 @@ async function main() {
     },
   })
   const gateway2 = await prisma.gateway.upsert({
-    where: { id: 'Gateway 02' },
-    update: {},
+    where: { id: OFFICE_DESK_ID },
+    update: {
+      name: OFFICE_DESK_ID,
+      mac_addr: OFFICE_DESK_MAC,
+    },
     create: {
-      id: 'Gateway 02',
-      name: "Gateway 02",
-      mac_addr: "EF0F38A6BF03",
+      id: OFFICE_DESK_ID,
+      name: OFFICE_DESK_ID,
+      mac_addr: OFFICE_DESK_MAC,
       check_point: false
     },
   })
@@ -103,15 +153,15 @@ async function newBeacon() {
   const b2 = await prisma.beacon.upsert({
     where: { id: 'B2' },
     update: {
-      name: 'OfficeDesk',
-      nickname: 'OfficeDesk',
-      mac_addr: 'CE6299527263',
+      name: 'Beacon 2',
+      nickname: 'Beacon 2',
+      mac_addr: '80ECCB002111',
     },
     create: {
       id: 'B2',
-      name: 'OfficeDesk',
-      nickname: 'OfficeDesk',
-      mac_addr: 'CE6299527263',
+      name: 'Beacon 2',
+      nickname: 'Beacon 2',
+      mac_addr: '80ECCB002111',
       gateway_id: WORKSHOP_ID,
       temp: 242,
       battery: 0,
