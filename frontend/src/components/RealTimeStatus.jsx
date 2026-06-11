@@ -3,7 +3,7 @@ import { useBeacons } from '../hooks/useBeacons';
 import { BeaconCard } from './BeaconCard';
 import { BeaconEditModal } from './BeaconEditModal';
 import { Activity, Radio, AlertCircle, CheckCircle2, Search } from 'lucide-react';
-import { beaconDisplayName, gatewayDisplayName } from '../utils/beaconDisplay';
+import { beaconMatchesSearch } from '../utils/beaconSearch';
 import { countTempAlerts } from '../utils/tempAlerts';
 
 export const RealTimeStatus = ({ currentUser }) => {
@@ -12,15 +12,10 @@ export const RealTimeStatus = ({ currentUser }) => {
   const { beacons, beaconList: allSorted, isConnected, updatesPerMin, mergeBeaconUpdates } = useBeacons();
   const isAdmin = currentUser?.role === 'admin';
 
-  const beaconList = useMemo(() => {
-    const q = searchQuery.trim().toLowerCase();
-    return allSorted.filter((beacon) => {
-      if (!q) return true;
-      const name = beaconDisplayName(beacon).toLowerCase();
-      const gateway = gatewayDisplayName(beacon).toLowerCase();
-      return name.includes(q) || gateway.includes(q);
-    });
-  }, [allSorted, searchQuery]);
+  const beaconList = useMemo(
+    () => allSorted.filter((beacon) => beaconMatchesSearch(beacon, searchQuery)),
+    [allSorted, searchQuery],
+  );
 
   const allBeacons = Object.values(beacons);
   const activeCount = allBeacons.filter(b => b.status === 'in').length;
@@ -66,9 +61,9 @@ export const RealTimeStatus = ({ currentUser }) => {
                 type="search"
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
-                placeholder="Search beacon or gateway name..."
+                placeholder="Search name, MAC, gateway, temp, battery, RSSI, status..."
                 className="input-field pl-10 py-2.5 text-sm"
-                aria-label="Search beacon or gateway name"
+                aria-label="Search all beacon fields"
               />
             </div>
           </div>
