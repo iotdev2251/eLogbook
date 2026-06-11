@@ -138,6 +138,7 @@ const NAMED_BEACONS = [
   { id: 'B1', mac: '80ECCC0008B6', nickname: 'Beacon 1', gateway_id: WORKSHOP_ID },
   { id: 'B2', mac: '80ECCB002111', nickname: 'Beacon 2', gateway_id: OFFICE_DESK_ID },
   { id: 'B3', mac: '80ECCC0006D1', nickname: 'Beacon 3', gateway_id: WORKSHOP_ID },
+  { id: 'B4', mac: '80ECCC0008D1', nickname: 'Beacon 4', gateway_id: OFFICE_DESK_ID },
 ]
 
 async function upsertNamedBeacon({ id, mac, nickname, gateway_id }) {
