@@ -36,6 +36,14 @@
 
 ---
 
+## [2026-06-08] 溫度 Alerts 機制
+
+- **Alerts 頁**：溫度 &gt; 32°C 的 Beacon 即時列出（&gt; 35°C 為嚴重分組）
+- **Real Time Status**：&gt; 32°C 欄位淺紅色；&gt; 35°C 火紅色
+- 統計卡 Alerts 數字改為溫度警示數量
+
+---
+
 ## [2026-06-08] Dashboard 三區圖表
 
 - **Dashboard 1**：溫度 **Bar Chart**（X=Beacon 名稱、Y=溫度 °C）

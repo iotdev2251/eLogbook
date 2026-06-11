@@ -11,6 +11,7 @@ import {
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import { formatBeaconStatus } from '../utils/beaconDisplay';
+import { getTempAlertLevel } from '../utils/tempAlerts';
 
 function cn(...inputs) {
   return twMerge(clsx(inputs));
@@ -29,24 +30,36 @@ const Metric = ({ icon: Icon, label, value, iconClass, valueClass }) => (
 );
 
 export const BeaconCard = ({ beacon, isAdmin, onEdit }) => {
-  const isAlert = beacon.status === 'alert' || beacon.alert;
+  const isStatusAlert = beacon.status === 'alert' || beacon.alert;
+  const tempLevel = getTempAlertLevel(beacon.temp);
   const isOnline = beacon.status === 'in';
   const displayName = beacon.nickname || beacon.name || 'Unknown Beacon';
   const gatewayText = beacon.gateway_name || beacon.gateway_id || '—';
   const timeText = beacon.report_at ? new Date(beacon.report_at).toLocaleTimeString() : '—';
+  const showWarningIcon = isStatusAlert || tempLevel !== 'none';
 
   return (
     <div
       className={cn(
         'glass-panel p-4 relative overflow-hidden transition-colors w-full',
-        isAlert
-          ? 'border-red-400/60 bg-red-50 dark:bg-red-500/5'
-          : 'hover:border-accent-cyan/40'
+        tempLevel === 'critical' &&
+          'border-red-600 bg-red-200 dark:bg-red-700/35 dark:border-red-500',
+        tempLevel === 'warn' &&
+          'border-red-300 bg-red-50 dark:bg-red-500/15 dark:border-red-400/60',
+        tempLevel === 'none' &&
+          isStatusAlert &&
+          'border-red-400/60 bg-red-50 dark:bg-red-500/5',
+        tempLevel === 'none' && !isStatusAlert && 'hover:border-accent-cyan/40'
       )}
     >
-      {isAlert && (
+      {showWarningIcon && (
         <div className="absolute top-2 right-2 z-10 pointer-events-none">
-          <AlertTriangle className="text-red-500 w-5 h-5 animate-pulse" />
+          <AlertTriangle
+            className={cn(
+              'w-5 h-5',
+              tempLevel === 'critical' ? 'text-red-700 animate-pulse' : 'text-red-500'
+            )}
+          />
         </div>
       )}
 
@@ -84,7 +97,15 @@ export const BeaconCard = ({ beacon, isAdmin, onEdit }) => {
           icon={Thermometer}
           label="Temp"
           value={beacon.temp != null ? `${beacon.temp}°C` : '—'}
-          iconClass="text-blue-600 dark:text-blue-400"
+          iconClass={cn(
+            'text-blue-600 dark:text-blue-400',
+            tempLevel === 'warn' && 'text-red-500',
+            tempLevel === 'critical' && 'text-red-700 dark:text-red-400'
+          )}
+          valueClass={cn(
+            tempLevel === 'warn' && 'text-red-600 dark:text-red-400',
+            tempLevel === 'critical' && 'text-red-800 dark:text-red-300 font-bold'
+          )}
         />
 
         <Metric

@@ -5,6 +5,7 @@ import { Dashboard } from './components/Dashboard';
 import { RealTimeStatus } from './components/RealTimeStatus';
 import { Login } from './components/Login';
 import { Settings } from './components/Settings';
+import { Alerts } from './components/Alerts';
 import { UserAvatar } from './components/UserAvatar';
 import { LayoutDashboard, History, Settings as SettingsIcon, Bell, LogOut, Radio } from 'lucide-react';
 
@@ -160,7 +161,7 @@ function AppContent() {
           <Route path="/real-time" element={<RealTimeStatus currentUser={user} />} />
           <Route path="/settings" element={<Settings currentUser={user} />} />
           <Route path="/history" element={<PlaceholderView name="History" />} />
-          <Route path="/alerts" element={<PlaceholderView name="Alerts" />} />
+          <Route path="/alerts" element={<Alerts currentUser={user} />} />
           <Route path="*" element={<NotFoundView />} />
         </Routes>
       </main>

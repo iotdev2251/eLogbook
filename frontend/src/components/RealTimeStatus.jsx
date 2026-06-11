@@ -4,6 +4,7 @@ import { BeaconCard } from './BeaconCard';
 import { BeaconEditModal } from './BeaconEditModal';
 import { Activity, Radio, AlertCircle, CheckCircle2, Search } from 'lucide-react';
 import { beaconDisplayName, gatewayDisplayName } from '../utils/beaconDisplay';
+import { countTempAlerts } from '../utils/tempAlerts';
 
 export const RealTimeStatus = ({ currentUser }) => {
   const [searchQuery, setSearchQuery] = useState('');
@@ -23,7 +24,7 @@ export const RealTimeStatus = ({ currentUser }) => {
 
   const allBeacons = Object.values(beacons);
   const activeCount = allBeacons.filter(b => b.status === 'in').length;
-  const alertCount = allBeacons.filter(b => b.status === 'alert' || b.alert).length;
+  const alertCount = countTempAlerts(allBeacons);
 
   return (
     <div className="p-8 max-w-7xl mx-auto flex flex-col gap-8">
