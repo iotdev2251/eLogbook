@@ -13,13 +13,13 @@ describe('tempAlerts', () => {
     expect(getTempAlertLevel(null)).toBe('none');
   });
 
-  it('returns warn above 32°C up to 35°C', () => {
+  it('returns warn above 32°C up to 36°C', () => {
     expect(getTempAlertLevel(32.1)).toBe('warn');
-    expect(getTempAlertLevel(35)).toBe('warn');
+    expect(getTempAlertLevel(36)).toBe('warn');
   });
 
-  it('returns critical above 35°C', () => {
-    expect(getTempAlertLevel(35.1)).toBe('critical');
+  it('returns critical above 36°C', () => {
+    expect(getTempAlertLevel(36.1)).toBe('critical');
     expect(getTempAlertLevel(40)).toBe('critical');
   });
 
@@ -27,7 +27,7 @@ describe('tempAlerts', () => {
     const list = [
       { mac_addr: 'a', temp: 30 },
       { mac_addr: 'b', temp: 33 },
-      { mac_addr: 'c', temp: 36 },
+      { mac_addr: 'c', temp: 37 },
     ];
     expect(countTempAlerts(list)).toBe(2);
     expect(filterTempAlertBeacons(list).map((b) => b.mac_addr)).toEqual(['c', 'b']);

@@ -1,5 +1,5 @@
 export const TEMP_WARN_C = 32;
-export const TEMP_CRITICAL_C = 35;
+export const TEMP_CRITICAL_C = 36;
 
 export function parseBeaconTempC(temp) {
   if (temp == null || temp === '') return null;

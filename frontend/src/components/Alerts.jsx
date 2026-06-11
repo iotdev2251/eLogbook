@@ -79,7 +79,7 @@ function AlertSection({ title, count, tone, beacons, isAdmin }) {
   const headerClass =
     tone === 'critical'
       ? 'text-red-700 dark:text-red-400'
-      : 'text-red-600 dark:text-red-300';
+      : 'text-orange-600 dark:text-orange-400';
 
   return (
     <section>

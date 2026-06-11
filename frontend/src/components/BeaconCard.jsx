@@ -45,7 +45,7 @@ export const BeaconCard = ({ beacon, isAdmin, onEdit }) => {
         tempLevel === 'critical' &&
           'border-red-600 bg-red-200 dark:bg-red-700/35 dark:border-red-500',
         tempLevel === 'warn' &&
-          'border-red-300 bg-red-50 dark:bg-red-500/15 dark:border-red-400/60',
+          'border-orange-400 bg-orange-50 dark:bg-orange-500/15 dark:border-orange-400/70',
         tempLevel === 'none' &&
           isStatusAlert &&
           'border-red-400/60 bg-red-50 dark:bg-red-500/5',
@@ -57,7 +57,11 @@ export const BeaconCard = ({ beacon, isAdmin, onEdit }) => {
           <AlertTriangle
             className={cn(
               'w-5 h-5',
-              tempLevel === 'critical' ? 'text-red-700 animate-pulse' : 'text-red-500'
+              tempLevel === 'critical'
+                ? 'text-red-700 animate-pulse'
+                : tempLevel === 'warn'
+                  ? 'text-orange-500'
+                  : 'text-red-500'
             )}
           />
         </div>
@@ -99,11 +103,11 @@ export const BeaconCard = ({ beacon, isAdmin, onEdit }) => {
           value={beacon.temp != null ? `${beacon.temp}°C` : '—'}
           iconClass={cn(
             'text-blue-600 dark:text-blue-400',
-            tempLevel === 'warn' && 'text-red-500',
+            tempLevel === 'warn' && 'text-orange-500 dark:text-orange-400',
             tempLevel === 'critical' && 'text-red-700 dark:text-red-400'
           )}
           valueClass={cn(
-            tempLevel === 'warn' && 'text-red-600 dark:text-red-400',
+            tempLevel === 'warn' && 'text-orange-600 dark:text-orange-400 font-semibold',
             tempLevel === 'critical' && 'text-red-800 dark:text-red-300 font-bold'
           )}
         />
