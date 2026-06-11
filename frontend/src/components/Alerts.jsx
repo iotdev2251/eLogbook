@@ -39,7 +39,7 @@ export const Alerts = ({ currentUser }) => {
         </div>
         <div className="text-sm text-muted shrink-0">
           {alertBeacons.length} alert{alertBeacons.length !== 1 ? 's' : ''} ·{' '}
-          {isConnected ? 'Live' : 'Disconnected'}
+          {isConnected ? 'Socket Connected · 實時更新' : 'Socket Disconnected'}
         </div>
       </div>
 
