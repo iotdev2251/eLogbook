@@ -8,6 +8,7 @@ const WORKSHOP_ID = 'Workshop'
 const OFFICE_DESK_ID = 'OfficeDesk'
 const OFFICE_DESK_MAC = 'CE6299527263'
 const LEGACY_GATEWAY_02_ID = 'Gateway 02'
+const NEW_BEACON_PREFIX_VALUE = '80ECCC0,80ECCB0'
 
 /** Rename existing DB gateway (seed alone does not update old primary keys). */
 async function migrateLegacyGatewayToWorkshop() {
@@ -188,10 +189,10 @@ async function param() {
   })
   await prisma.param.upsert({
     where: { key: 'NEW_BEACON_PREFIX' },
-    update: {},
+    update: { value: NEW_BEACON_PREFIX_VALUE },
     create: {
       key: 'NEW_BEACON_PREFIX',
-      value: '80ECCC,80ECCB,80ECCA',
+      value: NEW_BEACON_PREFIX_VALUE,
       desc: 'New Beacon Mac Address Prefix to be automatically accepted by system. Comma separated (,).'
     }
   })
