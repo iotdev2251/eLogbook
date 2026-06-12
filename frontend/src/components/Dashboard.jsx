@@ -10,10 +10,7 @@ const GATEWAY_COLORS = [
   '#2962ff', '#c62828', '#00897b', '#f9a825', '#5e35b1',
 ];
 
-const SEGMENT_COLORS = [
-  '#00b8d4', '#7c4dff', '#ff6d00', '#00c853', '#d500f9',
-  '#2962ff', '#c62828', '#00897b', '#f9a825', '#5e35b1',
-];
+const CHART_PALETTE = GATEWAY_COLORS;
 
 function truncateLabel(text, max = 14) {
   if (!text) return '';
@@ -278,7 +275,7 @@ function LocationBeaconStripChart({ groups }) {
               </text>
               <rect x={barLeft} y={y} width={barWidth} height={28} rx="6" fill="currentColor" fillOpacity="0.06" />
               {group.beacons.map((beacon, i) => {
-                const color = SEGMENT_COLORS[i % SEGMENT_COLORS.length];
+                const color = CHART_PALETTE[i % CHART_PALETTE.length];
                 return (
                   <g key={beacon.mac}>
                     <rect
@@ -350,31 +347,33 @@ export const Dashboard = () => {
   const locationGroups = useMemo(() => groupBeaconsByLocation(beaconList), [beaconList]);
 
   return (
-    <div className="p-8 max-w-7xl mx-auto flex flex-col gap-6">
-      <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold font-display">Dashboard</h2>
-        <div className="text-sm text-muted">
-          {beaconList.length} beacons · {isConnected ? 'Socket Connected' : 'Socket Disconnected'}
-        </div>
+    <div className="p-4 md:p-8 max-w-7xl mx-auto flex flex-col gap-6">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+        <p className="text-sm text-muted">
+          {beaconList.length} 個 Beacon · {isConnected ? '即時連線中' : '連線中斷'}
+        </p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="glass-panel p-6 lg:col-span-2">
-          <h3 className="text-lg font-bold mb-4">Dashboard 1: Temperature Bar Chart</h3>
+        <div className="glass-panel p-4 md:p-6 lg:col-span-2">
+          <h3 className="text-lg font-bold mb-1">溫度總覽</h3>
+          <p className="text-xs text-muted mb-4">各 Beacon 目前溫度（°C）</p>
           <div className="h-[380px]">
             <TemperatureBarChart data={chartData} />
           </div>
         </div>
 
-        <div className="glass-panel p-6 min-h-[380px]">
-          <h3 className="text-lg font-bold mb-4">Dashboard 2: Gateway &amp; Beacon Pie Chart</h3>
+        <div className="glass-panel p-4 md:p-6 min-h-[380px]">
+          <h3 className="text-lg font-bold mb-1">Location 分佈</h3>
+          <p className="text-xs text-muted mb-4">各 Gateway 的 Beacon 數量</p>
           <div className="h-[320px]">
             <GatewayBeaconPieChart groups={locationGroups} />
           </div>
         </div>
 
-        <div className="glass-panel p-6 lg:col-span-3">
-          <h3 className="text-lg font-bold mb-4">Dashboard 3: Beacon Assignment by Location</h3>
+        <div className="glass-panel p-4 md:p-6 lg:col-span-3">
+          <h3 className="text-lg font-bold mb-1">Location 指派一覽</h3>
+          <p className="text-xs text-muted mb-4">依 Gateway 分組的 Beacon 列表</p>
           <div className="min-h-[200px] py-2">
             <LocationBeaconStripChart groups={locationGroups} />
           </div>

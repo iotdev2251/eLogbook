@@ -1,6 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useId } from 'react';
 import axios from '../api/axiosSetup';
 import { useSettings } from '../context/SettingsContext';
+import { Button } from './ui/Button';
+import { ConfirmDialog } from './ui/ConfirmDialog';
 import {
   UserPlus,
   Trash2,
@@ -31,11 +33,8 @@ export const Settings = ({ currentUser }) => {
   const { refreshConfig } = useSettings();
 
   return (
-    <div className="p-8 max-w-5xl mx-auto flex flex-col gap-8">
-      <div>
-        <h2 className="text-2xl font-bold font-display">Settings</h2>
-        <p className="text-sm text-muted mt-1">Account security and system configuration.</p>
-      </div>
+    <div className="p-4 md:p-8 max-w-5xl mx-auto flex flex-col gap-8">
+      <p className="text-sm text-muted">帳號安全與系統設定。</p>
 
       <ChangePasswordSection />
 
@@ -92,28 +91,24 @@ function ChangePasswordSection() {
       <p className="text-sm text-muted mb-6">Update your login password.</p>
 
       {message && (
-        <div className="mb-4 text-green-700 dark:text-green-400 bg-green-50 dark:bg-green-500/10 p-3 rounded-xl border border-green-300 dark:border-green-500/20">
+        <div role="status" className="mb-4 text-success bg-success-muted p-3 rounded-xl border border-success/30">
           {message}
         </div>
       )}
       {error && (
-        <div className="mb-4 text-red-700 dark:text-red-400 bg-red-50 dark:bg-red-500/10 p-3 rounded-xl border border-red-300 dark:border-red-500/20">
+        <div role="alert" className="mb-4 text-danger bg-danger-muted p-3 rounded-xl border border-danger/30">
           {error}
         </div>
       )}
 
       <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-3xl">
-        <Field label="Current password" type="password" value={currentPassword} onChange={setCurrentPassword} required />
-        <Field label="New password" type="password" value={newPassword} onChange={setNewPassword} required />
-        <Field label="Confirm new password" type="password" value={confirmPassword} onChange={setConfirmPassword} required />
+        <Field id="pwd-current" label="Current password" type="password" value={currentPassword} onChange={setCurrentPassword} required />
+        <Field id="pwd-new" label="New password" type="password" value={newPassword} onChange={setNewPassword} required />
+        <Field id="pwd-confirm" label="Confirm new password" type="password" value={confirmPassword} onChange={setConfirmPassword} required />
         <div className="md:col-span-3">
-          <button
-            type="submit"
-            disabled={saving}
-            className="bg-slate-100 dark:bg-white/10 hover:bg-cyan-100 dark:hover:bg-accent-cyan/20 hover:text-cyan-800 dark:hover:text-accent-cyan text-foreground font-medium py-2 px-6 rounded-lg transition-all disabled:opacity-50"
-          >
+          <Button type="submit" variant="primary" disabled={saving}>
             {saving ? 'Saving…' : 'Update Password'}
-          </button>
+          </Button>
         </div>
       </form>
     </section>
@@ -246,6 +241,7 @@ function GatewayManagementSection() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
+  const [gatewayToDelete, setGatewayToDelete] = useState(null);
   const [editingId, setEditingId] = useState(null);
   const [editForm, setEditForm] = useState({ name: '', mac_addr: '', check_point: false });
   const [newGateway, setNewGateway] = useState({
@@ -312,21 +308,31 @@ function GatewayManagementSection() {
     }
   };
 
-  const handleDelete = async (gateway) => {
-    if (!window.confirm(`Delete gateway "${gateway.name}"?`)) return;
+  const confirmDeleteGateway = async () => {
+    if (!gatewayToDelete) return;
     setMessage('');
     setError('');
     try {
-      await axios.delete(`/settings/gateways/${encodeURIComponent(gateway.id)}`);
+      await axios.delete(`/settings/gateways/${encodeURIComponent(gatewayToDelete.id)}`);
       setMessage('Gateway deleted.');
       fetchGateways();
     } catch (err) {
       setError(err.response?.data?.msg || 'Failed to delete gateway');
+    } finally {
+      setGatewayToDelete(null);
     }
   };
 
   return (
     <section>
+      <ConfirmDialog
+        open={gatewayToDelete != null}
+        title="刪除 Gateway"
+        message={gatewayToDelete ? `確定要刪除「${gatewayToDelete.name}」嗎？此操作無法復原。` : ''}
+        confirmLabel="刪除"
+        onConfirm={confirmDeleteGateway}
+        onCancel={() => setGatewayToDelete(null)}
+      />
       <div className="mb-6">
         <h3 className="text-lg font-bold flex items-center gap-2">
           <Router className="text-accent-purple" size={20} />
@@ -377,12 +383,9 @@ function GatewayManagementSection() {
               />
               Check point (OUT when offline)
             </label>
-            <button
-              type="submit"
-              className="mt-2 bg-slate-100 dark:bg-white/10 hover:bg-cyan-100 dark:hover:bg-accent-cyan/20 hover:text-cyan-800 dark:hover:text-accent-cyan text-foreground font-medium py-2 rounded-lg transition-all"
-            >
+            <Button type="submit" variant="primary" className="mt-2">
               Add Gateway
-            </button>
+            </Button>
           </form>
         </div>
 
@@ -466,10 +469,10 @@ function GatewayManagementSection() {
                         </button>
                         <button
                           type="button"
-                          onClick={() => handleDelete(gateway)}
+                          onClick={() => setGatewayToDelete(gateway)}
                           disabled={gateway.beacon_count > 0}
-                          className="p-2 text-muted hover:text-red-600 dark:hover:text-red-400 hover:bg-red-500/10 rounded-lg disabled:opacity-40 disabled:cursor-not-allowed"
-                          title={gateway.beacon_count > 0 ? 'Remove beacons before deleting' : 'Delete gateway'}
+                          className="p-2 text-muted hover:text-danger hover:bg-danger-muted rounded-lg disabled:opacity-40 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-danger/40"
+                          aria-label={gateway.beacon_count > 0 ? 'Remove beacons before deleting' : `Delete gateway ${gateway.name}`}
                         >
                           <Trash2 size={16} />
                         </button>
@@ -577,13 +580,9 @@ function SystemParamsSection({ onSaved }) {
             </div>
           ))}
           <div className="md:col-span-2">
-            <button
-              type="submit"
-              disabled={saving}
-              className="bg-slate-100 dark:bg-white/10 hover:bg-cyan-100 dark:hover:bg-accent-cyan/20 hover:text-cyan-800 dark:hover:text-accent-cyan text-foreground font-medium py-2 px-6 rounded-lg transition-all disabled:opacity-50"
-            >
+            <Button type="submit" variant="primary" disabled={saving}>
               {saving ? 'Saving…' : 'Save System Settings'}
-            </button>
+            </Button>
           </div>
         </form>
       )}
@@ -595,6 +594,8 @@ function UserManagementSection({ currentUser }) {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [formError, setFormError] = useState('');
+  const [userToDelete, setUserToDelete] = useState(null);
   const [newUsername, setNewUsername] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [newRole, setNewRole] = useState('viewer');
@@ -616,6 +617,7 @@ function UserManagementSection({ currentUser }) {
 
   const handleCreateUser = async (e) => {
     e.preventDefault();
+    setFormError('');
     try {
       await axios.post('/auth/users', { username: newUsername, password: newPassword, role: newRole });
       setNewUsername('');
@@ -623,23 +625,33 @@ function UserManagementSection({ currentUser }) {
       setNewRole('viewer');
       fetchUsers();
     } catch (err) {
-      alert(err.response?.data?.msg || 'Failed to create user');
+      setFormError(err.response?.data?.msg || 'Failed to create user');
     }
   };
 
-  const handleDeleteUser = async (id) => {
-    if (window.confirm('Are you sure you want to delete this user?')) {
-      try {
-        await axios.delete(`/auth/users/${id}`);
-        fetchUsers();
-      } catch (err) {
-        alert(err.response?.data?.msg || 'Failed to delete user');
-      }
+  const confirmDeleteUser = async () => {
+    if (!userToDelete) return;
+    setFormError('');
+    try {
+      await axios.delete(`/auth/users/${userToDelete}`);
+      fetchUsers();
+    } catch (err) {
+      setFormError(err.response?.data?.msg || 'Failed to delete user');
+    } finally {
+      setUserToDelete(null);
     }
   };
 
   return (
     <section>
+      <ConfirmDialog
+        open={userToDelete != null}
+        title="刪除使用者"
+        message="確定要刪除此使用者嗎？此操作無法復原。"
+        confirmLabel="刪除"
+        onConfirm={confirmDeleteUser}
+        onCancel={() => setUserToDelete(null)}
+      />
       <div className="mb-6">
         <h3 className="text-lg font-bold flex items-center gap-2">
           <User className="text-accent-purple" size={20} />
@@ -649,8 +661,13 @@ function UserManagementSection({ currentUser }) {
       </div>
 
       {error && (
-        <div className="mb-4 text-red-700 dark:text-red-400 bg-red-50 dark:bg-red-500/10 p-4 rounded-xl border border-red-300 dark:border-red-500/20">
+        <div role="alert" className="mb-4 text-danger bg-danger-muted p-4 rounded-xl border border-danger/30">
           {error}
+        </div>
+      )}
+      {formError && (
+        <div role="alert" className="mb-4 text-danger bg-danger-muted p-4 rounded-xl border border-danger/30">
+          {formError}
         </div>
       )}
 
@@ -661,8 +678,8 @@ function UserManagementSection({ currentUser }) {
             Create User
           </h4>
           <form onSubmit={handleCreateUser} className="flex flex-col gap-4">
-            <Field label="Username" value={newUsername} onChange={setNewUsername} required />
-            <Field label="Password" type="password" value={newPassword} onChange={setNewPassword} required />
+            <Field id="user-new-name" label="Username" value={newUsername} onChange={setNewUsername} required />
+            <Field id="user-new-pwd" label="Password" type="password" value={newPassword} onChange={setNewPassword} required />
             <div>
               <label className="text-xs text-muted uppercase tracking-wider block mb-2">Role</label>
               <select
@@ -674,12 +691,9 @@ function UserManagementSection({ currentUser }) {
                 <option value="admin">Administrator</option>
               </select>
             </div>
-            <button
-              type="submit"
-              className="mt-4 bg-slate-100 dark:bg-white/10 hover:bg-cyan-100 dark:hover:bg-accent-cyan/20 hover:text-cyan-800 dark:hover:text-accent-cyan text-foreground font-medium py-2 rounded-lg transition-all"
-            >
+            <Button type="submit" variant="primary" className="mt-4">
               Add User
-            </button>
+            </Button>
           </form>
         </div>
 
@@ -706,9 +720,10 @@ function UserManagementSection({ currentUser }) {
                   </div>
                   {u.id !== currentUser.id && (
                     <button
-                      onClick={() => handleDeleteUser(u.id)}
-                      className="p-2 text-muted hover:text-red-600 dark:hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-all"
-                      title="Delete User"
+                      type="button"
+                      onClick={() => setUserToDelete(u.id)}
+                      className="p-2 text-muted hover:text-danger hover:bg-danger-muted rounded-lg transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-danger/40"
+                      aria-label={`Delete user ${u.username}`}
                     >
                       <Trash2 size={18} />
                     </button>
@@ -723,11 +738,17 @@ function UserManagementSection({ currentUser }) {
   );
 }
 
-function Field({ label, type = 'text', value, onChange, required }) {
+function Field({ id, label, type = 'text', value, onChange, required }) {
+  const autoId = useId();
+  const fieldId = id || autoId;
+
   return (
     <div>
-      <label className="text-xs text-muted uppercase tracking-wider block mb-2">{label}</label>
+      <label htmlFor={fieldId} className="text-xs text-muted uppercase tracking-wider block mb-2">
+        {label}
+      </label>
       <input
+        id={fieldId}
         type={type}
         value={value}
         onChange={(e) => onChange(e.target.value)}

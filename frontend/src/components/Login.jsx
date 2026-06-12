@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import axios from '../api/axiosSetup';
 import { useNavigate } from 'react-router-dom';
 import { Lock, User } from 'lucide-react';
+import { Button } from './ui/Button';
 
 export const Login = ({ onLogin }) => {
   const [username, setUsername] = useState('');
@@ -45,7 +46,10 @@ export const Login = ({ onLogin }) => {
         </div>
 
         {error && (
-          <div className="bg-red-50 dark:bg-red-500/10 border border-red-300 dark:border-red-500/50 text-red-700 dark:text-red-400 p-3 rounded-lg text-sm text-center">
+          <div
+            role="alert"
+            className="bg-danger-muted border border-danger/30 text-danger p-3 rounded-lg text-sm text-center"
+          >
             {error}
           </div>
         )}
@@ -80,13 +84,15 @@ export const Login = ({ onLogin }) => {
             />
           </div>
 
-          <button
+          <Button
             type="submit"
+            variant="primary"
+            size="lg"
             disabled={loading}
-            className="w-full bg-accent-cyan text-white font-bold py-3 rounded-xl mt-4 hover:opacity-90 active:scale-95 transition-all disabled:opacity-50 disabled:active:scale-100"
+            className="w-full mt-4 font-bold"
           >
-            {loading ? 'Authenticating...' : 'Access Dashboard'}
-          </button>
+            {loading ? '驗證中…' : '進入儀表板'}
+          </Button>
         </form>
       </div>
     </div>

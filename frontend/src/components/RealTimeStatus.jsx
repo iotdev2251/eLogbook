@@ -24,7 +24,7 @@ export const RealTimeStatus = ({ currentUser }) => {
   const alertCount = countTempAlerts(allBeacons, config);
 
   return (
-    <div className="p-8 max-w-7xl mx-auto flex flex-col gap-8">
+    <div className="p-4 md:p-8 max-w-7xl mx-auto flex flex-col gap-8">
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <StatCard
           icon={<Radio className="text-accent-cyan" />}

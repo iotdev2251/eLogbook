@@ -16,7 +16,19 @@ export default {
         accent: {
           cyan: '#00b8d4',
           purple: '#9333ea',
-        }
+        },
+        success: {
+          DEFAULT: 'var(--color-success)',
+          muted: 'var(--color-success-muted)',
+        },
+        warning: {
+          DEFAULT: 'var(--color-warning)',
+          muted: 'var(--color-warning-muted)',
+        },
+        danger: {
+          DEFAULT: 'var(--color-danger)',
+          muted: 'var(--color-danger-muted)',
+        },
       },
       fontFamily: {
         sans: ['Inter', 'sans-serif'],

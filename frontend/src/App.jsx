@@ -11,12 +11,30 @@ import { BeaconProvider } from './context/BeaconContext';
 import { SettingsProvider, useSettings } from './context/SettingsContext';
 import { countTempAlerts } from './utils/tempAlerts';
 import { useBeacons } from './hooks/useBeacons';
-import { LayoutDashboard, History, Settings as SettingsIcon, Bell, LogOut, Radio } from 'lucide-react';
+import {
+  LayoutDashboard,
+  History,
+  Settings as SettingsIcon,
+  Bell,
+  LogOut,
+  Radio,
+  Menu,
+  X,
+} from 'lucide-react';
+
+const TAB_TITLE_MAP = {
+  dashboard: '儀表板',
+  'real-time': '即時狀態',
+  history: '歷史紀錄',
+  alerts: '溫度警示',
+  settings: '設定',
+};
 
 function AppContent() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [now, setNow] = useState(() => new Date());
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -33,7 +51,7 @@ function AppContent() {
 
   useEffect(() => {
     axios.get('/auth/me')
-      .then(res => setUser(res.data))
+      .then((res) => setUser(res.data))
       .catch(() => setUser(null))
       .finally(() => setLoading(false));
   }, []);
@@ -42,6 +60,10 @@ function AppContent() {
     const id = setInterval(() => setNow(new Date()), 1000);
     return () => clearInterval(id);
   }, []);
+
+  useEffect(() => {
+    setMobileNavOpen(false);
+  }, [location.pathname]);
 
   const handleLogout = async () => {
     try {
@@ -57,8 +79,12 @@ function AppContent() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background text-foreground">
-        Loading...
+      <div className="min-h-screen flex flex-col items-center justify-center gap-4 bg-background text-foreground">
+        <div className="w-12 h-12 rounded-xl accent-gradient flex items-center justify-center">
+          <RadioIcon />
+        </div>
+        <div className="w-8 h-8 border-2 border-accent-cyan border-t-transparent rounded-full animate-spin" />
+        <p className="text-sm text-muted">載入中…</p>
       </div>
     );
   }
@@ -73,134 +99,225 @@ function AppContent() {
 
   const path = location.pathname.replace(/^\//, '');
   const activeTab = path === '' ? 'dashboard' : path.split('/')[0];
-  const tabTitleMap = {
-    dashboard: 'Dashboard',
-    'real-time': 'Real Time Status',
-    history: 'History',
-    alerts: 'Alerts',
-    settings: 'Settings',
-  };
-  const activeTitle = tabTitleMap[activeTab] || 'Page Not Found';
+  const activeTitle = TAB_TITLE_MAP[activeTab] || '找不到頁面';
 
   return (
     <SettingsProvider>
-    <BeaconProvider>
-    <div className="min-h-screen flex bg-background text-foreground">
-      <NavWithAlerts
-        activeTab={activeTab}
-        navigate={navigate}
-        onLogout={handleLogout}
-        user={user}
-      />
+      <BeaconProvider>
+        <div className="min-h-screen flex flex-col md:flex-row bg-background text-foreground">
+          <aside className="hidden md:flex w-64 shrink-0 border-r border-border flex-col p-6 gap-8 bg-card">
+            <SidebarNav
+              activeTab={activeTab}
+              navigate={navigate}
+              onLogout={handleLogout}
+              user={user}
+            />
+          </aside>
 
-      <main className="flex-1 overflow-y-auto bg-background">
-        <header className="h-16 border-b border-border flex items-center justify-between px-8 bg-card">
-          <h2 className="text-sm text-muted font-medium uppercase tracking-widest">
-            {activeTitle} View
-          </h2>
-          <div className="text-xs text-muted" aria-live="polite">
-            System Time: {now.toLocaleTimeString()}
+          {mobileNavOpen && (
+            <>
+              <button
+                type="button"
+                className="fixed inset-0 z-40 bg-black/40 md:hidden"
+                aria-label="關閉選單"
+                onClick={() => setMobileNavOpen(false)}
+              />
+              <aside className="fixed inset-y-0 left-0 z-50 w-72 max-w-[85vw] border-r border-border flex flex-col p-6 gap-8 bg-card md:hidden shadow-xl">
+                <div className="flex items-center justify-between">
+                  <BrandMark />
+                  <button
+                    type="button"
+                    onClick={() => setMobileNavOpen(false)}
+                    className="p-2 text-muted hover:text-foreground rounded-lg hover:bg-[var(--color-panel-hover)]"
+                    aria-label="關閉選單"
+                  >
+                    <X size={22} />
+                  </button>
+                </div>
+                <SidebarNav
+                  activeTab={activeTab}
+                  navigate={navigate}
+                  onLogout={handleLogout}
+                  user={user}
+                />
+              </aside>
+            </>
+          )}
+
+          <div className="flex-1 flex flex-col min-w-0 min-h-screen md:min-h-0">
+            <header className="h-14 md:h-16 border-b border-border flex items-center justify-between px-4 md:px-8 bg-card shrink-0 gap-3">
+              <div className="flex items-center gap-3 min-w-0">
+                <button
+                  type="button"
+                  onClick={() => setMobileNavOpen(true)}
+                  className="md:hidden p-2 -ml-1 text-muted hover:text-foreground rounded-lg hover:bg-[var(--color-panel-hover)]"
+                  aria-label="開啟選單"
+                >
+                  <Menu size={22} />
+                </button>
+                <h2 className="text-base md:text-lg font-bold font-display truncate">
+                  {activeTitle}
+                </h2>
+              </div>
+              <div className="text-xs text-muted shrink-0" aria-live="polite">
+                {now.toLocaleTimeString()}
+              </div>
+            </header>
+
+            <main className="flex-1 overflow-y-auto bg-background pb-20 md:pb-0">
+              <Routes>
+                <Route path="/" element={<Dashboard />} />
+                <Route path="/real-time" element={<RealTimeStatus currentUser={user} />} />
+                <Route path="/settings" element={<Settings currentUser={user} />} />
+                <Route path="/history" element={<PlaceholderView name="歷史紀錄" />} />
+                <Route path="/alerts" element={<Alerts currentUser={user} />} />
+                <Route path="*" element={<NotFoundView />} />
+              </Routes>
+            </main>
           </div>
-        </header>
 
-        <Routes>
-          <Route path="/" element={<Dashboard />} />
-          <Route path="/real-time" element={<RealTimeStatus currentUser={user} />} />
-          <Route path="/settings" element={<Settings currentUser={user} />} />
-          <Route path="/history" element={<PlaceholderView name="History" />} />
-          <Route path="/alerts" element={<Alerts currentUser={user} />} />
-          <Route path="*" element={<NotFoundView />} />
-        </Routes>
-      </main>
-    </div>
-    </BeaconProvider>
+          <MobileBottomNav activeTab={activeTab} navigate={navigate} />
+        </div>
+      </BeaconProvider>
     </SettingsProvider>
   );
 }
 
-function NavWithAlerts({ activeTab, navigate, onLogout, user }) {
+function SidebarNav({ activeTab, navigate, onLogout, user }) {
   const { beaconList } = useBeacons();
   const { config } = useSettings();
   const tempAlertCount = countTempAlerts(beaconList, config);
 
   return (
-      <nav className="w-64 border-r border-border flex flex-col p-6 gap-8 bg-card" aria-label="Main navigation">
-        <div className="flex items-center gap-3 px-2">
-          <div className="w-8 h-8 rounded-lg accent-gradient flex items-center justify-center">
-            <RadioIcon />
-          </div>
-          <h1 className="text-xl font-bold font-display text-gradient">
-            TempTrack
-          </h1>
-        </div>
+    <>
+      <div className="hidden md:block">
+        <BrandMark />
+      </div>
 
-        <div className="flex flex-col gap-2">
+      <nav className="flex flex-col gap-2 flex-1" aria-label="主要導航">
+        <NavItem
+          icon={<LayoutDashboard size={20} />}
+          label="儀表板"
+          active={activeTab === 'dashboard'}
+          onClick={() => navigate('/')}
+        />
+        <NavItem
+          icon={<Radio size={20} />}
+          label="即時狀態"
+          active={activeTab === 'real-time'}
+          onClick={() => navigate('/real-time')}
+        />
+        <NavItem
+          icon={<History size={20} />}
+          label="歷史紀錄"
+          active={activeTab === 'history'}
+          onClick={() => navigate('/history')}
+        />
+        <NavItem
+          icon={<Bell size={20} />}
+          label="溫度警示"
+          active={activeTab === 'alerts'}
+          onClick={() => navigate('/alerts')}
+          badge={tempAlertCount > 0 ? tempAlertCount : null}
+        />
+        <div className="mt-4 pt-4 border-t border-border">
           <NavItem
-            icon={<LayoutDashboard size={20} />}
-            label="Dashboard"
-            active={activeTab === 'dashboard'}
-            onClick={() => navigate('/')}
+            icon={<SettingsIcon size={20} />}
+            label="設定"
+            active={activeTab === 'settings'}
+            onClick={() => navigate('/settings')}
           />
-          <NavItem
-            icon={<Radio size={20} />}
-            label="Real Time Status"
-            active={activeTab === 'real-time'}
-            onClick={() => navigate('/real-time')}
-          />
-          <NavItem
-            icon={<History size={20} />}
-            label="History"
-            active={activeTab === 'history'}
-            onClick={() => navigate('/history')}
-          />
-          <NavItem
-            icon={<Bell size={20} />}
-            label="Alerts"
-            active={activeTab === 'alerts'}
-            onClick={() => navigate('/alerts')}
-            badge={tempAlertCount > 0 ? tempAlertCount : null}
-          />
-          <div className="mt-4 pt-4 border-t border-border">
-            <NavItem
-              icon={<SettingsIcon size={20} />}
-              label="Settings"
-              active={activeTab === 'settings'}
-              onClick={() => navigate('/settings')}
-            />
-          </div>
-        </div>
-
-        <div className="mt-auto flex flex-col gap-4">
-          <button
-            onClick={onLogout}
-            className="flex items-center gap-3 px-4 py-2 text-red-600 dark:text-red-400 hover:bg-red-500/10 rounded-xl transition-all"
-          >
-            <LogOut size={18} />
-            <span className="font-medium text-sm">Sign Out</span>
-          </button>
-          <div className="p-4 glass-panel flex items-center gap-3">
-            <UserAvatar username={user.username} />
-            <div className="overflow-hidden">
-              <p className="text-sm font-bold truncate">{user.username}</p>
-              <p className="text-[10px] text-muted uppercase tracking-widest">{user.role}</p>
-            </div>
-          </div>
         </div>
       </nav>
+
+      <div className="flex flex-col gap-4">
+        <button
+          type="button"
+          onClick={onLogout}
+          className="flex items-center gap-3 px-4 py-2 text-danger hover:bg-danger-muted rounded-xl transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-danger/40"
+        >
+          <LogOut size={18} />
+          <span className="font-medium text-sm">登出</span>
+        </button>
+        <div className="p-4 glass-panel flex items-center gap-3">
+          <UserAvatar username={user.username} />
+          <div className="overflow-hidden">
+            <p className="text-sm font-bold truncate">{user.username}</p>
+            <p className="text-[10px] text-muted uppercase tracking-widest">{user.role}</p>
+          </div>
+        </div>
+      </div>
+    </>
+  );
+}
+
+function MobileBottomNav({ activeTab, navigate }) {
+  const { beaconList } = useBeacons();
+  const { config } = useSettings();
+  const tempAlertCount = countTempAlerts(beaconList, config);
+
+  const tabs = [
+    { id: 'dashboard', label: '儀表板', icon: LayoutDashboard, path: '/' },
+    { id: 'real-time', label: '即時', icon: Radio, path: '/real-time' },
+    { id: 'alerts', label: '警示', icon: Bell, path: '/alerts', badge: tempAlertCount },
+    { id: 'settings', label: '設定', icon: SettingsIcon, path: '/settings' },
+  ];
+
+  return (
+    <nav
+      className="md:hidden fixed bottom-0 inset-x-0 z-30 border-t border-border bg-card safe-area-pb"
+      aria-label="快速導航"
+    >
+      <div className="flex items-stretch justify-around">
+        {tabs.map(({ id, label, icon: Icon, path, badge }) => {
+          const active = activeTab === id;
+          return (
+            <button
+              key={id}
+              type="button"
+              onClick={() => navigate(path)}
+              aria-current={active ? 'page' : undefined}
+              className={`relative flex-1 flex flex-col items-center gap-0.5 py-2.5 text-[10px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent-cyan/50 ${
+                active ? 'text-accent-cyan' : 'text-muted'
+              }`}
+            >
+              <Icon size={20} />
+              <span>{label}</span>
+              {badge > 0 && (
+                <span className="absolute top-1 right-[calc(50%-22px)] min-w-[1rem] h-4 px-1 rounded-full bg-danger text-white text-[9px] font-bold flex items-center justify-center">
+                  {badge}
+                </span>
+              )}
+            </button>
+          );
+        })}
+      </div>
+    </nav>
+  );
+}
+
+function BrandMark() {
+  return (
+    <div className="flex items-center gap-3 px-2">
+      <div className="w-8 h-8 rounded-lg accent-gradient flex items-center justify-center">
+        <RadioIcon />
+      </div>
+      <h1 className="text-xl font-bold font-display text-gradient">TempTrack</h1>
+    </div>
   );
 }
 
 const PlaceholderView = ({ name }) => (
-  <div className="p-12 text-center text-muted">
-    <h2 className="text-2xl font-bold mb-4 text-foreground">{name} View is coming soon</h2>
-    <p>We are currently implementing this feature.</p>
+  <div className="p-8 md:p-12 text-center text-muted">
+    <h2 className="text-2xl font-bold mb-4 text-foreground">{name}開發中</h2>
+    <p>此功能正在實作中，敬請期待。</p>
   </div>
 );
 
 const NotFoundView = () => (
-  <div className="p-12 text-center text-muted">
-    <h2 className="text-2xl font-bold mb-4 text-foreground">Page not found</h2>
-    <p>The page you requested does not exist.</p>
+  <div className="p-8 md:p-12 text-center text-muted">
+    <h2 className="text-2xl font-bold mb-4 text-foreground">找不到頁面</h2>
+    <p>您請求的頁面不存在。</p>
   </div>
 );
 
@@ -217,7 +334,7 @@ const NavItem = ({ icon, label, active, onClick, badge }) => (
     type="button"
     onClick={onClick}
     aria-current={active ? 'page' : undefined}
-    className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 w-full ${
+    className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 w-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-cyan/50 ${
       active
         ? 'bg-cyan-100 text-cyan-800 ring-1 ring-cyan-300 dark:bg-accent-cyan/10 dark:text-accent-cyan dark:ring-accent-cyan/20'
         : 'text-muted hover:text-foreground hover:bg-[var(--color-panel-hover)]'
@@ -226,7 +343,7 @@ const NavItem = ({ icon, label, active, onClick, badge }) => (
     {icon}
     <span className="font-medium flex-1 text-left">{label}</span>
     {badge != null && (
-      <span className="min-w-[1.25rem] h-5 px-1.5 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center">
+      <span className="min-w-[1.25rem] h-5 px-1.5 rounded-full bg-danger text-white text-[10px] font-bold flex items-center justify-center">
         {badge}
       </span>
     )}

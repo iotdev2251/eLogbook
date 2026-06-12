@@ -1,12 +1,17 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import axios from '../api/axiosSetup';
 import { X } from 'lucide-react';
+import { useFocusTrap } from '../hooks/useFocusTrap';
+import { Button } from './ui/Button';
 
 export const BeaconEditModal = ({ beacon, open, onClose, onSaved }) => {
   const [nickname, setNickname] = useState('');
   const [gatewayName, setGatewayName] = useState('');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+  const dialogRef = useRef(null);
+
+  useFocusTrap(dialogRef, open && beacon != null);
 
   useEffect(() => {
     if (!beacon) return;
@@ -51,21 +56,22 @@ export const BeaconEditModal = ({ beacon, open, onClose, onSaved }) => {
       role="presentation"
     >
       <div
+        ref={dialogRef}
         className="glass-panel w-full max-w-md p-6 shadow-xl"
-        onClick={e => e.stopPropagation()}
+        onClick={(e) => e.stopPropagation()}
         role="dialog"
         aria-modal="true"
         aria-labelledby="beacon-edit-title"
       >
         <div className="flex items-center justify-between mb-6">
           <h3 id="beacon-edit-title" className="text-lg font-bold">
-            Edit labels
+            編輯標籤
           </h3>
           <button
             type="button"
             onClick={onClose}
-            className="p-2 text-muted hover:text-foreground rounded-lg hover:bg-slate-100 dark:hover:bg-white/10"
-            aria-label="Close"
+            className="p-2 text-muted hover:text-foreground rounded-lg hover:bg-[var(--color-panel-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-cyan/50"
+            aria-label="關閉"
           >
             <X size={20} />
           </button>
@@ -74,37 +80,39 @@ export const BeaconEditModal = ({ beacon, open, onClose, onSaved }) => {
         <p className="text-xs text-muted font-mono mb-4 break-all">{beacon.mac_addr}</p>
 
         {error && (
-          <p className="text-sm text-red-600 dark:text-red-400 mb-4">{error}</p>
+          <p className="text-sm text-danger mb-4" role="alert">{error}</p>
         )}
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           <div>
-            <label className="text-xs text-muted uppercase tracking-wider block mb-2">
-              Beacon display name
+            <label htmlFor="beacon-edit-nickname" className="text-xs text-muted uppercase tracking-wider block mb-2">
+              Beacon 顯示名稱
             </label>
             <input
+              id="beacon-edit-nickname"
               type="text"
               value={nickname}
-              onChange={e => setNickname(e.target.value)}
+              onChange={(e) => setNickname(e.target.value)}
               className="input-field"
-              placeholder="e.g. Cold room A-01"
+              placeholder="例如：冷房 A-01"
               maxLength={255}
             />
             <p className="text-[10px] text-muted mt-1">
-              Saved as nickname; BLE broadcast name is not changed.
+              儲存為暱稱；不會變更 BLE 廣播名稱。
             </p>
           </div>
 
           <div>
-            <label className="text-xs text-muted uppercase tracking-wider block mb-2">
-              Gateway display name
+            <label htmlFor="beacon-edit-gateway" className="text-xs text-muted uppercase tracking-wider block mb-2">
+              Gateway 顯示名稱
             </label>
             <input
+              id="beacon-edit-gateway"
               type="text"
               value={gatewayName}
-              onChange={e => setGatewayName(e.target.value)}
+              onChange={(e) => setGatewayName(e.target.value)}
               className="input-field"
-              placeholder="e.g. Floor 1 checkpoint"
+              placeholder="例如：一樓檢查點"
               maxLength={255}
               required
             />
@@ -114,25 +122,17 @@ export const BeaconEditModal = ({ beacon, open, onClose, onSaved }) => {
               </p>
             )}
             <p className="text-[10px] text-muted mt-1">
-              Applies to all beacons on this gateway.
+              會套用到此 Gateway 上的所有 Beacon。
             </p>
           </div>
 
           <div className="flex gap-3 mt-2">
-            <button
-              type="button"
-              onClick={onClose}
-              className="flex-1 py-2 rounded-lg border border-border text-muted hover:text-foreground transition-colors"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={saving}
-              className="flex-1 py-2 rounded-lg bg-cyan-600 hover:bg-cyan-700 text-white font-medium disabled:opacity-50 transition-colors"
-            >
-              {saving ? 'Saving…' : 'Save'}
-            </button>
+            <Button type="button" variant="outline" className="flex-1" onClick={onClose}>
+              取消
+            </Button>
+            <Button type="submit" variant="primary" className="flex-1" disabled={saving}>
+              {saving ? '儲存中…' : '儲存'}
+            </Button>
           </div>
         </form>
       </div>

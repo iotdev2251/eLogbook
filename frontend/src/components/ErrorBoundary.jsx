@@ -1,4 +1,5 @@
 import React from 'react';
+import { Button } from './ui/Button';
 
 export class ErrorBoundary extends React.Component {
   constructor(props) {
@@ -23,13 +24,9 @@ export class ErrorBoundary extends React.Component {
             <p className="text-sm text-muted">
               The page encountered an error. Please reload or sign in again.
             </p>
-            <button
-              type="button"
-              onClick={() => window.location.reload()}
-              className="py-2 px-4 rounded-lg bg-cyan-600 hover:bg-cyan-700 text-white font-medium"
-            >
-              Reload page
-            </button>
+            <Button type="button" variant="primary" onClick={() => window.location.reload()}>
+              重新載入
+            </Button>
           </div>
         </div>
       );

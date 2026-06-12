@@ -20,6 +20,7 @@ export default defineConfig({
       '/auth': proxyOptions,
       '/beacons': proxyOptions,
       '/history': proxyOptions,
+      '/settings': proxyOptions,
       '/socket.io': {
         ...proxyOptions,
         ws: true,

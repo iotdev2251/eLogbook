@@ -30,7 +30,7 @@ export const Alerts = ({ currentUser }) => {
   );
 
   return (
-    <div className="p-8 max-w-7xl mx-auto flex flex-col gap-8">
+    <div className="p-4 md:p-8 max-w-7xl mx-auto flex flex-col gap-8">
       <div className="flex items-center justify-between gap-4">
         <div>
           <h2 className="text-2xl font-bold font-display flex items-center gap-2">
