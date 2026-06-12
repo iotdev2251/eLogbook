@@ -2,19 +2,19 @@ import { beaconDisplayName, gatewayDisplayName } from './beaconDisplay';
 import { getTempAlertLevel, parseBeaconTempC } from './tempAlerts';
 
 export const SORT_OPTIONS = [
-  { value: 'name', label: '名稱' },
-  { value: 'temp', label: '溫度' },
-  { value: 'status', label: '狀態' },
+  { value: 'name', label: 'Name' },
+  { value: 'temp', label: 'Temperature' },
+  { value: 'status', label: 'Status' },
   { value: 'gateway', label: 'Gateway' },
-  { value: 'lastSeen', label: '最後更新' },
+  { value: 'lastSeen', label: 'Last Updated' },
 ];
 
 export const STATUS_FILTER_OPTIONS = [
-  { value: 'all', label: '全部' },
-  { value: 'in', label: '在線' },
-  { value: 'out', label: '離線' },
-  { value: 'alert', label: '警示狀態' },
-  { value: 'tempAlert', label: '溫度警示' },
+  { value: 'all', label: 'All' },
+  { value: 'in', label: 'Online' },
+  { value: 'out', label: 'Offline' },
+  { value: 'alert', label: 'Alert Status' },
+  { value: 'tempAlert', label: 'Temp Alert' },
 ];
 
 const STATUS_ORDER = { alert: 0, out: 1, in: 2 };

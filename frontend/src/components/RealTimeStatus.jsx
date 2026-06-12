@@ -38,25 +38,25 @@ export const RealTimeStatus = ({ currentUser }) => {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
         <StatCard
           icon={<Radio className="text-accent-cyan" />}
-          label="Beacon 總數"
+          label="Total Beacons"
           value={allBeacons.length}
-          subValue={isConnected ? '即時連線中' : '連線中斷'}
+          subValue={isConnected ? 'Live connected' : 'Disconnected'}
         />
         <StatCard
           icon={<CheckCircle2 className="text-success" />}
-          label="在線"
+          label="Online"
           value={activeCount}
         />
         <StatCard
           icon={<AlertCircle className="text-danger" />}
-          label="溫度警示"
+          label="Temp Alerts"
           value={alertCount}
         />
         <StatCard
           icon={<Activity className="text-accent-purple" />}
-          label="近期活動"
+          label="Recent Activity"
           value={updatesPerMin}
-          subValue="次/分鐘"
+          subValue="updates/min"
         />
       </div>
 
@@ -64,15 +64,15 @@ export const RealTimeStatus = ({ currentUser }) => {
         <div className="flex flex-col gap-4 mb-6">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <h2 className="text-xl font-bold font-display flex items-center gap-2 shrink-0">
-              即時 Beacon 狀態
+              Live Beacon Status
               <span
                 className={`flex h-2 w-2 rounded-full ${isConnected ? 'bg-accent-cyan animate-ping' : 'bg-muted'}`}
                 aria-hidden="true"
               />
-              <span className="sr-only">{isConnected ? '即時連線中' : '連線中斷'}</span>
+              <span className="sr-only">{isConnected ? 'Live connected' : 'Disconnected'}</span>
             </h2>
             <div className="text-sm text-muted shrink-0">
-              {beaconList.length} / {allBeacons.length} · Socket.io 自動更新
+              {beaconList.length} / {allBeacons.length} · Auto-refresh via Socket.io
             </div>
           </div>
 
@@ -83,9 +83,9 @@ export const RealTimeStatus = ({ currentUser }) => {
                 type="search"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="搜尋名稱、MAC、Gateway、溫度…"
+                placeholder="Search name, MAC, gateway, temperature…"
                 className="input-field pl-10 py-2.5 text-sm w-full"
-                aria-label="搜尋 Beacon"
+                aria-label="Search beacons"
               />
             </div>
             <div className="flex flex-wrap gap-2">
@@ -93,7 +93,7 @@ export const RealTimeStatus = ({ currentUser }) => {
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
                 className="input-field py-2.5 text-sm min-w-[7rem]"
-                aria-label="狀態篩選"
+                aria-label="Status filter"
               >
                 {STATUS_FILTER_OPTIONS.map((opt) => (
                   <option key={opt.value} value={opt.value}>{opt.label}</option>
@@ -103,7 +103,7 @@ export const RealTimeStatus = ({ currentUser }) => {
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value)}
                 className="input-field py-2.5 text-sm min-w-[7rem]"
-                aria-label="排序欄位"
+                aria-label="Sort field"
               >
                 {SORT_OPTIONS.map((opt) => (
                   <option key={opt.value} value={opt.value}>{opt.label}</option>
@@ -113,10 +113,10 @@ export const RealTimeStatus = ({ currentUser }) => {
                 value={sortDir}
                 onChange={(e) => setSortDir(e.target.value)}
                 className="input-field py-2.5 text-sm min-w-[6rem]"
-                aria-label="排序方向"
+                aria-label="Sort direction"
               >
-                <option value="asc">升序</option>
-                <option value="desc">降序</option>
+                <option value="asc">Ascending</option>
+                <option value="desc">Descending</option>
               </select>
             </div>
           </div>
@@ -126,8 +126,8 @@ export const RealTimeStatus = ({ currentUser }) => {
           {beaconList.length === 0 ? (
             <div className="glass-panel p-8 text-center text-muted">
               {searchQuery.trim() || statusFilter !== 'all'
-                ? '沒有符合條件的 Beacon。'
-                : '目前沒有 Beacon 資料。'}
+                ? 'No beacons match your filters.'
+                : 'No beacon data available.'}
             </div>
           ) : (
             beaconList.map((beacon) => (

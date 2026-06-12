@@ -24,11 +24,11 @@ import {
 } from 'lucide-react';
 
 const TAB_TITLE_MAP = {
-  dashboard: '儀表板',
-  'real-time': '即時狀態',
-  history: '歷史紀錄',
-  alerts: '溫度警示',
-  settings: '設定',
+  dashboard: 'Dashboard',
+  'real-time': 'Real Time Status',
+  history: 'History',
+  alerts: 'Temperature Alerts',
+  settings: 'Settings',
 };
 
 function AppContent() {
@@ -85,7 +85,7 @@ function AppContent() {
           <RadioIcon />
         </div>
         <div className="w-8 h-8 border-2 border-accent-cyan border-t-transparent rounded-full animate-spin" />
-        <p className="text-sm text-muted">載入中…</p>
+        <p className="text-sm text-muted">Loading…</p>
       </div>
     );
   }
@@ -100,7 +100,7 @@ function AppContent() {
 
   const path = location.pathname.replace(/^\//, '');
   const activeTab = path === '' ? 'dashboard' : path.split('/')[0];
-  const activeTitle = TAB_TITLE_MAP[activeTab] || '找不到頁面';
+  const activeTitle = TAB_TITLE_MAP[activeTab] || 'Page Not Found';
 
   return (
     <SettingsProvider>
@@ -120,7 +120,7 @@ function AppContent() {
               <button
                 type="button"
                 className="fixed inset-0 z-40 bg-black/40 md:hidden"
-                aria-label="關閉選單"
+                aria-label="Close menu"
                 onClick={() => setMobileNavOpen(false)}
               />
               <aside className="fixed inset-y-0 left-0 z-50 w-72 max-w-[85vw] border-r border-border flex flex-col p-6 gap-8 bg-card md:hidden shadow-xl">
@@ -130,7 +130,7 @@ function AppContent() {
                     type="button"
                     onClick={() => setMobileNavOpen(false)}
                     className="p-2 text-muted hover:text-foreground rounded-lg hover:bg-[var(--color-panel-hover)]"
-                    aria-label="關閉選單"
+                    aria-label="Close menu"
                   >
                     <X size={22} />
                   </button>
@@ -152,7 +152,7 @@ function AppContent() {
                   type="button"
                   onClick={() => setMobileNavOpen(true)}
                   className="md:hidden p-2 -ml-1 text-muted hover:text-foreground rounded-lg hover:bg-[var(--color-panel-hover)]"
-                  aria-label="開啟選單"
+                  aria-label="Open menu"
                 >
                   <Menu size={22} />
                 </button>
@@ -172,7 +172,7 @@ function AppContent() {
                 <Route path="/" element={<Dashboard />} />
                 <Route path="/real-time" element={<RealTimeStatus currentUser={user} />} />
                 <Route path="/settings" element={<Settings currentUser={user} />} />
-                <Route path="/history" element={<PlaceholderView name="歷史紀錄" />} />
+                <Route path="/history" element={<PlaceholderView name="History" />} />
                 <Route path="/alerts" element={<Alerts currentUser={user} />} />
                 <Route path="*" element={<NotFoundView />} />
               </Routes>
@@ -197,28 +197,28 @@ function SidebarNav({ activeTab, navigate, onLogout, user }) {
         <BrandMark />
       </div>
 
-      <nav className="flex flex-col gap-2 flex-1" aria-label="主要導航">
+      <nav className="flex flex-col gap-2 flex-1" aria-label="Main navigation">
         <NavItem
           icon={<LayoutDashboard size={20} />}
-          label="儀表板"
+          label="Dashboard"
           active={activeTab === 'dashboard'}
           onClick={() => navigate('/')}
         />
         <NavItem
           icon={<Radio size={20} />}
-          label="即時狀態"
+          label="Real Time Status"
           active={activeTab === 'real-time'}
           onClick={() => navigate('/real-time')}
         />
         <NavItem
           icon={<History size={20} />}
-          label="歷史紀錄"
+          label="History"
           active={activeTab === 'history'}
           onClick={() => navigate('/history')}
         />
         <NavItem
           icon={<Bell size={20} />}
-          label="溫度警示"
+          label="Alerts"
           active={activeTab === 'alerts'}
           onClick={() => navigate('/alerts')}
           badge={tempAlertCount > 0 ? tempAlertCount : null}
@@ -226,7 +226,7 @@ function SidebarNav({ activeTab, navigate, onLogout, user }) {
         <div className="mt-4 pt-4 border-t border-border">
           <NavItem
             icon={<SettingsIcon size={20} />}
-            label="設定"
+            label="Settings"
             active={activeTab === 'settings'}
             onClick={() => navigate('/settings')}
           />
@@ -240,7 +240,7 @@ function SidebarNav({ activeTab, navigate, onLogout, user }) {
           className="flex items-center gap-3 px-4 py-2 text-danger hover:bg-danger-muted rounded-xl transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-danger/40"
         >
           <LogOut size={18} />
-          <span className="font-medium text-sm">登出</span>
+          <span className="font-medium text-sm">Sign Out</span>
         </button>
         <div className="p-4 glass-panel flex items-center gap-3">
           <UserAvatar username={user.username} />
@@ -260,16 +260,16 @@ function MobileBottomNav({ activeTab, navigate }) {
   const tempAlertCount = countTempAlerts(beaconList, config);
 
   const tabs = [
-    { id: 'dashboard', label: '儀表板', icon: LayoutDashboard, path: '/' },
-    { id: 'real-time', label: '即時', icon: Radio, path: '/real-time' },
-    { id: 'alerts', label: '警示', icon: Bell, path: '/alerts', badge: tempAlertCount },
-    { id: 'settings', label: '設定', icon: SettingsIcon, path: '/settings' },
+    { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, path: '/' },
+    { id: 'real-time', label: 'Live', icon: Radio, path: '/real-time' },
+    { id: 'alerts', label: 'Alerts', icon: Bell, path: '/alerts', badge: tempAlertCount },
+    { id: 'settings', label: 'Settings', icon: SettingsIcon, path: '/settings' },
   ];
 
   return (
     <nav
       className="md:hidden fixed bottom-0 inset-x-0 z-30 border-t border-border bg-card safe-area-pb"
-      aria-label="快速導航"
+      aria-label="Quick navigation"
     >
       <div className="flex items-stretch justify-around">
         {tabs.map(({ id, label, icon: Icon, path, badge }) => {
@@ -312,15 +312,15 @@ function BrandMark() {
 
 const PlaceholderView = ({ name }) => (
   <div className="p-8 md:p-12 text-center text-muted">
-    <h2 className="text-2xl font-bold mb-4 text-foreground">{name}開發中</h2>
-    <p>此功能正在實作中，敬請期待。</p>
+    <h2 className="text-2xl font-bold mb-4 text-foreground">{name} is coming soon</h2>
+    <p>We are currently implementing this feature.</p>
   </div>
 );
 
 const NotFoundView = () => (
   <div className="p-8 md:p-12 text-center text-muted">
-    <h2 className="text-2xl font-bold mb-4 text-foreground">找不到頁面</h2>
-    <p>您請求的頁面不存在。</p>
+    <h2 className="text-2xl font-bold mb-4 text-foreground">Page not found</h2>
+    <p>The page you requested does not exist.</p>
   </div>
 );
 

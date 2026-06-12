@@ -37,29 +37,29 @@ export const Alerts = ({ currentUser }) => {
         <div>
           <h2 className="text-2xl font-bold font-display flex items-center gap-2">
             <AlertTriangle className="text-danger" size={28} />
-            溫度警示
+            Temperature Alerts
           </h2>
           <p className="text-sm text-muted mt-1">
-            Beacon 溫度 &gt; {tempWarnC}°C 列入警示；&gt; {tempCriticalC}°C 為嚴重高溫
+            Beacons above {tempWarnC}°C are flagged; above {tempCriticalC}°C is critical
           </p>
         </div>
         <div className="text-sm text-muted shrink-0">
-          {alertBeacons.length} 則警示 ·{' '}
-          {isConnected ? '即時更新' : '連線中斷'}
+          {alertBeacons.length} alert{alertBeacons.length !== 1 ? 's' : ''} ·{' '}
+          {isConnected ? 'Live updates' : 'Disconnected'}
         </div>
       </div>
 
       {alertBeacons.length === 0 ? (
         <div className="glass-panel p-12 text-center text-muted">
           <Thermometer className="w-12 h-12 mx-auto mb-4 opacity-40" />
-          <p className="text-lg font-medium text-foreground">目前沒有溫度警示</p>
-          <p className="text-sm mt-2">所有 Beacon 溫度均在 {tempWarnC}°C 或以下</p>
+          <p className="text-lg font-medium text-foreground">No temperature alerts</p>
+          <p className="text-sm mt-2">All beacons are at or below {tempWarnC}°C</p>
         </div>
       ) : (
         <div className="flex flex-col gap-8">
           {critical.length > 0 && (
             <AlertSection
-              title={`嚴重高溫（&gt; ${tempCriticalC}°C）`}
+              title={`Critical high temp (&gt; ${tempCriticalC}°C)`}
               count={critical.length}
               tone="critical"
               beacons={critical}
@@ -69,7 +69,7 @@ export const Alerts = ({ currentUser }) => {
           )}
           {warn.length > 0 && (
             <AlertSection
-              title={`溫度偏高（&gt; ${tempWarnC}°C）`}
+              title={`Elevated temp (&gt; ${tempWarnC}°C)`}
               count={warn.length}
               tone="warn"
               beacons={warn}

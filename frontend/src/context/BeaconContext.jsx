@@ -51,7 +51,7 @@ export function BeaconProvider({ children }) {
       setBeacons(beaconMap);
       setLoadError('');
     } catch {
-      setLoadError('無法載入 Beacon 資料');
+      setLoadError('Failed to load beacon data');
     }
   }, []);
 

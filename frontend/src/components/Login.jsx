@@ -91,7 +91,7 @@ export const Login = ({ onLogin }) => {
             disabled={loading}
             className="w-full mt-4 font-bold"
           >
-            {loading ? '驗證中…' : '進入儀表板'}
+            {loading ? 'Authenticating…' : 'Access Dashboard'}
           </Button>
         </form>
       </div>

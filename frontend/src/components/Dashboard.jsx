@@ -40,12 +40,12 @@ function barFillForLevel(level) {
   return '#00b8d4';
 }
 
-/** X = Beacon 名稱，Y = 溫度 (°C) */
+/** X = beacon name, Y = temperature (°C) */
 function TemperatureBarChart({ data, thresholds }) {
   if (data.length === 0) {
     return (
       <div className="h-full flex items-center justify-center text-muted">
-        尚未有可用溫度資料
+        No temperature data available
       </div>
     );
   }
@@ -65,8 +65,8 @@ function TemperatureBarChart({ data, thresholds }) {
   const warnC = thresholds?.tempWarnC ?? 32;
   const criticalC = thresholds?.tempCriticalC ?? 36;
   const thresholdLines = [
-    { temp: warnC, color: '#ea580c', label: `警示 ${warnC}°C` },
-    { temp: criticalC, color: '#dc2626', label: `嚴重 ${criticalC}°C` },
+    { temp: warnC, color: '#ea580c', label: `Warn ${warnC}°C` },
+    { temp: criticalC, color: '#dc2626', label: `Critical ${criticalC}°C` },
   ].filter((line) => line.temp >= chartMinTemp && line.temp <= chartMaxTemp);
 
   return (
@@ -192,7 +192,7 @@ function beaconShade(baseHex, index, total) {
 }
 
 /**
- * 雙層圓餅：內圈 = Gateway，外圈 = 該 Gateway 內的 Beacon
+ * Dual-ring pie: inner = gateway, outer = beacons per gateway
  */
 function GatewayBeaconPieChart({ groups }) {
   const total = groups.reduce((sum, g) => sum + g.beacons.length, 0);
@@ -200,7 +200,7 @@ function GatewayBeaconPieChart({ groups }) {
   if (total === 0) {
     return (
       <div className="h-full flex items-center justify-center text-muted text-sm">
-        尚無 Beacon 資料
+        No beacon data
       </div>
     );
   }
@@ -285,7 +285,7 @@ function LocationBeaconStripChart({ groups }) {
   if (groups.length === 0) {
     return (
       <div className="h-full flex items-center justify-center text-muted">
-        尚無 Location 資料
+        No location data
       </div>
     );
   }
@@ -436,31 +436,31 @@ export const Dashboard = () => {
     <div className="p-4 md:p-8 max-w-7xl mx-auto flex flex-col gap-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
         <p className="text-sm text-muted">
-          {beaconList.length} 個 Beacon · {isConnected ? '即時連線中' : '連線中斷'}
+          {beaconList.length} beacons · {isConnected ? 'Live connected' : 'Disconnected'}
         </p>
       </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <DashboardKpi
           icon={<Radio className="text-accent-cyan" size={22} />}
-          label="Beacon 總數"
+          label="Total Beacons"
           value={beaconList.length}
         />
         <DashboardKpi
           icon={<CheckCircle2 className="text-success" size={22} />}
-          label="在線"
+          label="Online"
           value={stats.active}
           tone="success"
         />
         <DashboardKpi
           icon={<AlertCircle className="text-danger" size={22} />}
-          label="溫度警示"
+          label="Temp Alerts"
           value={stats.tempAlerts}
           tone={stats.tempAlerts > 0 ? 'danger' : undefined}
         />
         <DashboardKpi
           icon={<Thermometer className="text-warning" size={22} />}
-          label="最高溫度"
+          label="Highest Temp"
           value={stats.maxTemp != null ? `${stats.maxTemp}°C` : '—'}
           subValue={stats.maxBeacon ? beaconDisplayName(stats.maxBeacon) : undefined}
           tone={stats.maxTemp != null && getTempAlertLevel(stats.maxTemp, config) !== 'none' ? 'warn' : undefined}
@@ -469,24 +469,24 @@ export const Dashboard = () => {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="glass-panel p-4 md:p-6 lg:col-span-2">
-          <h3 className="text-lg font-bold mb-1">溫度總覽</h3>
-          <p className="text-xs text-muted mb-4">各 Beacon 目前溫度（°C）</p>
+          <h3 className="text-lg font-bold mb-1">Temperature Overview</h3>
+          <p className="text-xs text-muted mb-4">Current temperature per beacon (°C)</p>
           <div className="h-[380px]">
             <TemperatureBarChart data={chartData} thresholds={config} />
           </div>
         </div>
 
         <div className="glass-panel p-4 md:p-6 min-h-[380px]">
-          <h3 className="text-lg font-bold mb-1">Location 分佈</h3>
-          <p className="text-xs text-muted mb-4">各 Gateway 的 Beacon 數量</p>
+          <h3 className="text-lg font-bold mb-1">Location Distribution</h3>
+          <p className="text-xs text-muted mb-4">Beacon count per gateway</p>
           <div className="h-[320px]">
             <GatewayBeaconPieChart groups={locationGroups} />
           </div>
         </div>
 
         <div className="glass-panel p-4 md:p-6 lg:col-span-3">
-          <h3 className="text-lg font-bold mb-1">Location 指派一覽</h3>
-          <p className="text-xs text-muted mb-4">依 Gateway 分組的 Beacon 列表</p>
+          <h3 className="text-lg font-bold mb-1">Location Assignment</h3>
+          <p className="text-xs text-muted mb-4">Beacons grouped by gateway</p>
           <div className="min-h-[200px] py-2">
             <LocationBeaconStripChart groups={locationGroups} />
           </div>

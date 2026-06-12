@@ -65,13 +65,13 @@ export const BeaconEditModal = ({ beacon, open, onClose, onSaved }) => {
       >
         <div className="flex items-center justify-between mb-6">
           <h3 id="beacon-edit-title" className="text-lg font-bold">
-            編輯標籤
+            Edit Labels
           </h3>
           <button
             type="button"
             onClick={onClose}
             className="p-2 text-muted hover:text-foreground rounded-lg hover:bg-[var(--color-panel-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-cyan/50"
-            aria-label="關閉"
+            aria-label="Close"
           >
             <X size={20} />
           </button>
@@ -86,7 +86,7 @@ export const BeaconEditModal = ({ beacon, open, onClose, onSaved }) => {
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           <div>
             <label htmlFor="beacon-edit-nickname" className="text-xs text-muted uppercase tracking-wider block mb-2">
-              Beacon 顯示名稱
+              Beacon display name
             </label>
             <input
               id="beacon-edit-nickname"
@@ -94,17 +94,17 @@ export const BeaconEditModal = ({ beacon, open, onClose, onSaved }) => {
               value={nickname}
               onChange={(e) => setNickname(e.target.value)}
               className="input-field"
-              placeholder="例如：冷房 A-01"
+              placeholder="e.g. Cold room A-01"
               maxLength={255}
             />
             <p className="text-[10px] text-muted mt-1">
-              儲存為暱稱；不會變更 BLE 廣播名稱。
+              Saved as nickname; BLE broadcast name is not changed.
             </p>
           </div>
 
           <div>
             <label htmlFor="beacon-edit-gateway" className="text-xs text-muted uppercase tracking-wider block mb-2">
-              Gateway 顯示名稱
+              Gateway display name
             </label>
             <input
               id="beacon-edit-gateway"
@@ -112,7 +112,7 @@ export const BeaconEditModal = ({ beacon, open, onClose, onSaved }) => {
               value={gatewayName}
               onChange={(e) => setGatewayName(e.target.value)}
               className="input-field"
-              placeholder="例如：一樓檢查點"
+              placeholder="e.g. Floor 1 checkpoint"
               maxLength={255}
               required
             />
@@ -122,16 +122,16 @@ export const BeaconEditModal = ({ beacon, open, onClose, onSaved }) => {
               </p>
             )}
             <p className="text-[10px] text-muted mt-1">
-              會套用到此 Gateway 上的所有 Beacon。
+              Applies to all beacons on this gateway.
             </p>
           </div>
 
           <div className="flex gap-3 mt-2">
             <Button type="button" variant="outline" className="flex-1" onClick={onClose}>
-              取消
+              Cancel
             </Button>
             <Button type="submit" variant="primary" className="flex-1" disabled={saving}>
-              {saving ? '儲存中…' : '儲存'}
+              {saving ? 'Saving…' : 'Save'}
             </Button>
           </div>
         </form>

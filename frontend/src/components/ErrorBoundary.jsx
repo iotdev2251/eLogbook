@@ -25,7 +25,7 @@ export class ErrorBoundary extends React.Component {
               The page encountered an error. Please reload or sign in again.
             </p>
             <Button type="button" variant="primary" onClick={() => window.location.reload()}>
-              重新載入
+              Reload page
             </Button>
           </div>
         </div>

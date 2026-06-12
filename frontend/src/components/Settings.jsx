@@ -29,11 +29,11 @@ const PARAM_FIELDS = [
 ];
 
 const SETTINGS_NAV = [
-  { id: 'settings-password', label: '修改密碼', adminOnly: false },
-  { id: 'settings-status', label: '系統狀態', adminOnly: true },
-  { id: 'settings-gateway', label: 'Gateway', adminOnly: true },
-  { id: 'settings-params', label: '系統參數', adminOnly: true },
-  { id: 'settings-users', label: '使用者', adminOnly: true },
+  { id: 'settings-password', label: 'Password', adminOnly: false },
+  { id: 'settings-status', label: 'System Status', adminOnly: true },
+  { id: 'settings-gateway', label: 'Gateways', adminOnly: true },
+  { id: 'settings-params', label: 'Parameters', adminOnly: true },
+  { id: 'settings-users', label: 'Users', adminOnly: true },
 ];
 
 export const Settings = ({ currentUser }) => {
@@ -48,12 +48,12 @@ export const Settings = ({ currentUser }) => {
 
   return (
     <div className="p-4 md:p-8 max-w-6xl mx-auto">
-      <p className="text-sm text-muted mb-6">帳號安全與系統設定。</p>
+      <p className="text-sm text-muted mb-6">Account security and system configuration.</p>
 
       <div className="flex flex-col lg:flex-row gap-8">
         <nav
           className="lg:w-44 shrink-0 lg:sticky lg:top-4 self-start flex lg:flex-col gap-1 overflow-x-auto pb-2 lg:pb-0"
-          aria-label="設定導航"
+          aria-label="Settings navigation"
         >
           {navItems.map((item) => (
             <button
@@ -371,9 +371,9 @@ function GatewayManagementSection() {
     <section>
       <ConfirmDialog
         open={gatewayToDelete != null}
-        title="刪除 Gateway"
-        message={gatewayToDelete ? `確定要刪除「${gatewayToDelete.name}」嗎？此操作無法復原。` : ''}
-        confirmLabel="刪除"
+        title="Delete Gateway"
+        message={gatewayToDelete ? `Delete "${gatewayToDelete.name}"? This cannot be undone.` : ''}
+        confirmLabel="Delete"
         onConfirm={confirmDeleteGateway}
         onCancel={() => setGatewayToDelete(null)}
       />
@@ -690,9 +690,9 @@ function UserManagementSection({ currentUser }) {
     <section>
       <ConfirmDialog
         open={userToDelete != null}
-        title="刪除使用者"
-        message="確定要刪除此使用者嗎？此操作無法復原。"
-        confirmLabel="刪除"
+        title="Delete User"
+        message="Delete this user? This cannot be undone."
+        confirmLabel="Delete"
         onConfirm={confirmDeleteUser}
         onCancel={() => setUserToDelete(null)}
       />
