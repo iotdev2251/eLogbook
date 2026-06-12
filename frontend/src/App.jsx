@@ -8,6 +8,7 @@ import { Settings } from './components/Settings';
 import { Alerts } from './components/Alerts';
 import { UserAvatar } from './components/UserAvatar';
 import { BeaconProvider } from './context/BeaconContext';
+import { SettingsProvider, useSettings } from './context/SettingsContext';
 import { countTempAlerts } from './utils/tempAlerts';
 import { useBeacons } from './hooks/useBeacons';
 import { LayoutDashboard, History, Settings as SettingsIcon, Bell, LogOut, Radio } from 'lucide-react';
@@ -18,7 +19,6 @@ function AppContent() {
   const [now, setNow] = useState(() => new Date());
   const location = useLocation();
   const navigate = useNavigate();
-  const isAdmin = user?.role === 'admin';
 
   useEffect(() => {
     configureAxios({
@@ -83,11 +83,11 @@ function AppContent() {
   const activeTitle = tabTitleMap[activeTab] || 'Page Not Found';
 
   return (
+    <SettingsProvider>
     <BeaconProvider>
     <div className="min-h-screen flex bg-background text-foreground">
       <NavWithAlerts
         activeTab={activeTab}
-        isAdmin={isAdmin}
         navigate={navigate}
         onLogout={handleLogout}
         user={user}
@@ -114,12 +114,14 @@ function AppContent() {
       </main>
     </div>
     </BeaconProvider>
+    </SettingsProvider>
   );
 }
 
-function NavWithAlerts({ activeTab, isAdmin, navigate, onLogout, user }) {
+function NavWithAlerts({ activeTab, navigate, onLogout, user }) {
   const { beaconList } = useBeacons();
-  const tempAlertCount = countTempAlerts(beaconList);
+  const { config } = useSettings();
+  const tempAlertCount = countTempAlerts(beaconList, config);
 
   return (
       <nav className="w-64 border-r border-border flex flex-col p-6 gap-8 bg-card" aria-label="Main navigation">
@@ -158,16 +160,14 @@ function NavWithAlerts({ activeTab, isAdmin, navigate, onLogout, user }) {
             onClick={() => navigate('/alerts')}
             badge={tempAlertCount > 0 ? tempAlertCount : null}
           />
-          {isAdmin && (
-            <div className="mt-4 pt-4 border-t border-border">
-              <NavItem
-                icon={<SettingsIcon size={20} />}
-                label="Settings"
-                active={activeTab === 'settings'}
-                onClick={() => navigate('/settings')}
-              />
-            </div>
-          )}
+          <div className="mt-4 pt-4 border-t border-border">
+            <NavItem
+              icon={<SettingsIcon size={20} />}
+              label="Settings"
+              active={activeTab === 'settings'}
+              onClick={() => navigate('/settings')}
+            />
+          </div>
         </div>
 
         <div className="mt-auto flex flex-col gap-4">

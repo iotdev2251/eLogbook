@@ -12,6 +12,7 @@ import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import { formatBeaconStatus } from '../utils/beaconDisplay';
 import { getTempAlertLevel } from '../utils/tempAlerts';
+import { useSettings } from '../context/SettingsContext';
 
 function cn(...inputs) {
   return twMerge(clsx(inputs));
@@ -30,8 +31,9 @@ const Metric = ({ icon: Icon, label, value, iconClass, valueClass }) => (
 );
 
 export const BeaconCard = ({ beacon, isAdmin, onEdit }) => {
+  const { config } = useSettings();
   const isStatusAlert = beacon.status === 'alert' || beacon.alert;
-  const tempLevel = getTempAlertLevel(beacon.temp);
+  const tempLevel = getTempAlertLevel(beacon.temp, config);
   const isOnline = beacon.status === 'in';
   const displayName = beacon.nickname || beacon.name || 'Unknown Beacon';
   const gatewayText = beacon.gateway_name || beacon.gateway_id || '—';

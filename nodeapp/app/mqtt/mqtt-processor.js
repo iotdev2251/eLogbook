@@ -14,10 +14,17 @@ class MqttProcessor{
     }
 
     async init(io, expiredSeconds){
-        this._expiredSeconds = expiredSeconds
+        this._expiredSeconds = Number(expiredSeconds) || 60
         this._io = io;
 
-        logger.info("Beacon Out Seconds is %d", expiredSeconds)
+        logger.info("Beacon Out Seconds is %d", this._expiredSeconds)
+    }
+
+    setExpiredSeconds(seconds) {
+        const n = Number(seconds);
+        if (!Number.isFinite(n) || n < 1) return;
+        this._expiredSeconds = n;
+        logger.info('Beacon Out Seconds updated to %d', n);
     }
 
     async process(json, gatewayMac){

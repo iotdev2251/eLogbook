@@ -196,6 +196,24 @@ async function param() {
       desc: 'New Beacon Mac Address Prefix to be automatically accepted by system. Comma separated (,).'
     }
   })
+  await prisma.param.upsert({
+    where: { key: 'TEMP_WARN_C' },
+    update: {},
+    create: {
+      key: 'TEMP_WARN_C',
+      value: '32',
+      desc: 'Temperature warning threshold in °C.'
+    }
+  })
+  await prisma.param.upsert({
+    where: { key: 'TEMP_CRITICAL_C' },
+    update: {},
+    create: {
+      key: 'TEMP_CRITICAL_C',
+      value: '36',
+      desc: 'Temperature critical threshold in °C.'
+    }
+  })
 }
 
 main()

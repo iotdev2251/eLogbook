@@ -13,6 +13,13 @@ class ScheduleTask {
         this._historyExpiredHours = historyExpiredHours
     }
 
+    setHistoryExpiredHours(hours) {
+        const n = Number(hours);
+        if (!Number.isFinite(n) || n < 1) return;
+        this._historyExpiredHours = n;
+        logger.info('History expired hours updated to %d', n);
+    }
+
     async schedule() {
         logger.info("History Expired Hours is %d", this._historyExpiredHours)
 

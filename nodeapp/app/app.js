@@ -16,6 +16,7 @@ import { BeaconRepository } from './beacon/beacon-repository.js';
 import { ParamRepository } from './param/param-repository.js';
 import { MqttProcessor } from './mqtt/mqtt-processor.js';
 import { ScheduleTask } from './job/schedule-task.js';
+import { addSettingsRouter } from './settings/settings-router.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -63,6 +64,8 @@ class MyApp {
         this._beaconRepository = new BeaconRepository(new BeaconDataStore())
         this._mqttProcessor = new MqttProcessor(this._beaconRepository)
         this._mqttClient = new MyMqttClient(this._mqttProcessor)
+        this._paramRepository = null
+        this._scheduleTask = null
     }
 
     getApp(){
@@ -74,20 +77,29 @@ class MyApp {
 
         const paramRepository = new ParamRepository()
         await paramRepository.init()
+        this._paramRepository = paramRepository
 
         await this._beaconRepository.init(paramRepository.getNewBeaconPrefix())
         await this._mqttProcessor.init(io, paramRepository.getBeaconOutTime())
         await this._mqttClient.init()
 
-        this._initRouter(this.app)
-
-        new ScheduleTask(this._mqttProcessor, 
+        this._scheduleTask = new ScheduleTask(
+            this._mqttProcessor,
             paramRepository.getHistoryExpiredTime()
-        ).schedule()
+        )
+        this._scheduleTask.schedule()
+
+        this._initRouter(this.app, paramRepository)
     }
 
-    _initRouter(app) {
+    _initRouter(app, paramRepository) {
         app.use('/auth', authRouter)
+        app.use('/settings', addSettingsRouter(
+            paramRepository,
+            this._mqttProcessor,
+            this._beaconRepository,
+            this._scheduleTask,
+        ))
         app.use('/beacons', authMiddleware, addBeaconRouter(this._beaconRepository, this._mqttProcessor))
         app.use('/history', authMiddleware, addHistoryRouter())
 

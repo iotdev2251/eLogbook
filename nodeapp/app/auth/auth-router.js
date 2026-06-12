@@ -76,6 +76,45 @@ router.post('/logout', (req, res) => {
     res.json({ msg: 'Logged out successfully' });
 });
 
+// @route   POST /auth/change-password
+// @desc    Change current user's password
+router.post('/change-password', authMiddleware, async (req, res) => {
+    const { currentPassword, newPassword } = req.body;
+
+    if (typeof currentPassword !== 'string' || typeof newPassword !== 'string') {
+        return res.status(400).json({ msg: 'Current and new password are required' });
+    }
+    if (newPassword.length < 8) {
+        return res.status(400).json({ msg: 'New password must be at least 8 characters' });
+    }
+    if (currentPassword === newPassword) {
+        return res.status(400).json({ msg: 'New password must differ from current password' });
+    }
+
+    try {
+        const user = await prisma.user.findUnique({ where: { id: req.user.id } });
+        if (!user) {
+            return res.status(404).json({ msg: 'User not found' });
+        }
+
+        const isMatch = await bcrypt.compare(currentPassword, user.password);
+        if (!isMatch) {
+            return res.status(400).json({ msg: 'Current password is incorrect' });
+        }
+
+        const hashedPassword = await bcrypt.hash(newPassword, 10);
+        await prisma.user.update({
+            where: { id: req.user.id },
+            data: { password: hashedPassword },
+        });
+
+        res.json({ msg: 'Password updated successfully' });
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).send('Server Error');
+    }
+});
+
 // @route   GET /auth/users
 // @desc    Get all users (Admin only)
 router.get('/users', [authMiddleware, adminMiddleware], async (req, res) => {

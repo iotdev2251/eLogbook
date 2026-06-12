@@ -2,27 +2,31 @@ import React, { useMemo } from 'react';
 import { useBeacons } from '../hooks/useBeacons';
 import { BeaconCard } from './BeaconCard';
 import { AlertTriangle, Thermometer } from 'lucide-react';
+import { useSettings } from '../context/SettingsContext';
 import {
   filterTempAlertBeacons,
   getTempAlertLevel,
-  TEMP_CRITICAL_C,
-  TEMP_WARN_C,
 } from '../utils/tempAlerts';
 
 export const Alerts = ({ currentUser }) => {
   const { beaconList, isConnected } = useBeacons();
+  const { config } = useSettings();
   const isAdmin = currentUser?.role === 'admin';
+  const { tempWarnC, tempCriticalC } = config;
 
-  const alertBeacons = useMemo(() => filterTempAlertBeacons(beaconList), [beaconList]);
+  const alertBeacons = useMemo(
+    () => filterTempAlertBeacons(beaconList, config),
+    [beaconList, config],
+  );
 
   const critical = useMemo(
-    () => alertBeacons.filter((b) => getTempAlertLevel(b.temp) === 'critical'),
-    [alertBeacons],
+    () => alertBeacons.filter((b) => getTempAlertLevel(b.temp, config) === 'critical'),
+    [alertBeacons, config],
   );
 
   const warn = useMemo(
-    () => alertBeacons.filter((b) => getTempAlertLevel(b.temp) === 'warn'),
-    [alertBeacons],
+    () => alertBeacons.filter((b) => getTempAlertLevel(b.temp, config) === 'warn'),
+    [alertBeacons, config],
   );
 
   return (
@@ -34,7 +38,7 @@ export const Alerts = ({ currentUser }) => {
             Temperature Alerts
           </h2>
           <p className="text-sm text-muted mt-1">
-            Beacon 溫度 &gt; {TEMP_WARN_C}°C 列入警示；&gt; {TEMP_CRITICAL_C}°C 為嚴重高溫
+            Beacon 溫度 &gt; {tempWarnC}°C 列入警示；&gt; {tempCriticalC}°C 為嚴重高溫
           </p>
         </div>
         <div className="text-sm text-muted shrink-0">
@@ -47,13 +51,13 @@ export const Alerts = ({ currentUser }) => {
         <div className="glass-panel p-12 text-center text-muted">
           <Thermometer className="w-12 h-12 mx-auto mb-4 opacity-40" />
           <p className="text-lg font-medium text-foreground">目前沒有溫度警示</p>
-          <p className="text-sm mt-2">所有 Beacon 溫度均在 {TEMP_WARN_C}°C 或以下</p>
+          <p className="text-sm mt-2">所有 Beacon 溫度均在 {tempWarnC}°C 或以下</p>
         </div>
       ) : (
         <div className="flex flex-col gap-8">
           {critical.length > 0 && (
             <AlertSection
-              title={`嚴重高溫（&gt; ${TEMP_CRITICAL_C}°C）`}
+              title={`嚴重高溫（&gt; ${tempCriticalC}°C）`}
               count={critical.length}
               tone="critical"
               beacons={critical}
@@ -62,7 +66,7 @@ export const Alerts = ({ currentUser }) => {
           )}
           {warn.length > 0 && (
             <AlertSection
-              title={`溫度偏高（&gt; ${TEMP_WARN_C}°C）`}
+              title={`溫度偏高（&gt; ${tempWarnC}°C）`}
               count={warn.length}
               tone="warn"
               beacons={warn}

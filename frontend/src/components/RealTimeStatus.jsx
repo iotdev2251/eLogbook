@@ -5,11 +5,13 @@ import { BeaconEditModal } from './BeaconEditModal';
 import { Activity, Radio, AlertCircle, CheckCircle2, Search } from 'lucide-react';
 import { beaconMatchesSearch } from '../utils/beaconSearch';
 import { countTempAlerts } from '../utils/tempAlerts';
+import { useSettings } from '../context/SettingsContext';
 
 export const RealTimeStatus = ({ currentUser }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [editingBeacon, setEditingBeacon] = useState(null);
   const { beacons, beaconList: allSorted, isConnected, updatesPerMin, mergeBeaconUpdates } = useBeacons();
+  const { config } = useSettings();
   const isAdmin = currentUser?.role === 'admin';
 
   const beaconList = useMemo(
@@ -19,7 +21,7 @@ export const RealTimeStatus = ({ currentUser }) => {
 
   const allBeacons = Object.values(beacons);
   const activeCount = allBeacons.filter(b => b.status === 'in').length;
-  const alertCount = countTempAlerts(allBeacons);
+  const alertCount = countTempAlerts(allBeacons, config);
 
   return (
     <div className="p-8 max-w-7xl mx-auto flex flex-col gap-8">

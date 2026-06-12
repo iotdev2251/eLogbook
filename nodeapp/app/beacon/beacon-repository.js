@@ -13,7 +13,14 @@ class BeaconRepository {
 
     async init(beaconPrefix) {
         await this._initData()
-        this._beaconPrefixes = beaconPrefix.split(',');
+        this.setBeaconPrefixes(beaconPrefix)
+    }
+
+    setBeaconPrefixes(beaconPrefix) {
+        this._beaconPrefixes = String(beaconPrefix || '')
+            .split(',')
+            .map((p) => p.trim())
+            .filter(Boolean);
     }
 
     async _initData() {
