@@ -30,7 +30,7 @@ const Metric = ({ icon: Icon, label, value, iconClass, valueClass }) => (
   </div>
 );
 
-export const BeaconCard = ({ beacon, isAdmin, onEdit }) => {
+export const BeaconCard = ({ beacon, isAdmin, onEdit, highlighted = false }) => {
   const { config } = useSettings();
   const isStatusAlert = beacon.status === 'alert' || beacon.alert;
   const tempLevel = getTempAlertLevel(beacon.temp, config);
@@ -51,7 +51,8 @@ export const BeaconCard = ({ beacon, isAdmin, onEdit }) => {
         tempLevel === 'none' &&
           isStatusAlert &&
           'border-red-400/60 bg-red-50 dark:bg-red-500/5',
-        tempLevel === 'none' && !isStatusAlert && 'hover:border-accent-cyan/40'
+        tempLevel === 'none' && !isStatusAlert && 'hover:border-accent-cyan/40',
+        highlighted && 'ring-2 ring-accent-cyan border-accent-cyan/60'
       )}
     >
       {showWarningIcon && (

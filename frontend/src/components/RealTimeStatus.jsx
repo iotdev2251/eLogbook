@@ -1,4 +1,5 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useBeacons } from '../hooks/useBeacons';
 import { useSettings } from '../context/SettingsContext';
 import { BeaconCard } from './BeaconCard';
@@ -14,6 +15,8 @@ import {
 } from '../utils/sortBeacons';
 
 export const RealTimeStatus = ({ currentUser }) => {
+  const [searchParams] = useSearchParams();
+  const highlightMac = searchParams.get('mac')?.trim().toLowerCase() || '';
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState('name');
   const [sortDir, setSortDir] = useState('asc');
@@ -22,12 +25,25 @@ export const RealTimeStatus = ({ currentUser }) => {
   const { beacons, beaconList: allSorted, isConnected, updatesPerMin, mergeBeaconUpdates } = useBeacons();
   const { config } = useSettings();
   const isAdmin = currentUser?.role === 'admin';
+  const highlightRef = useRef(null);
+
+  useEffect(() => {
+    if (highlightMac) {
+      setSearchQuery(highlightMac);
+    }
+  }, [highlightMac]);
 
   const beaconList = useMemo(() => {
     const searched = allSorted.filter((beacon) => beaconMatchesSearch(beacon, searchQuery));
     const filtered = filterBeacons(searched, { statusFilter, thresholds: config });
     return sortBeacons(filtered, { sortBy, sortDir });
   }, [allSorted, searchQuery, statusFilter, sortBy, sortDir, config]);
+
+  useEffect(() => {
+    if (highlightRef.current) {
+      highlightRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  }, [highlightMac, beaconList.length]);
 
   const allBeacons = Object.values(beacons);
   const activeCount = allBeacons.filter((b) => b.status === 'in').length;
@@ -130,14 +146,20 @@ export const RealTimeStatus = ({ currentUser }) => {
                 : 'No beacon data available.'}
             </div>
           ) : (
-            beaconList.map((beacon) => (
-              <BeaconCard
-                key={beacon.mac_addr}
-                beacon={beacon}
-                isAdmin={isAdmin}
-                onEdit={setEditingBeacon}
-              />
-            ))
+            beaconList.map((beacon) => {
+              const isHighlighted = highlightMac
+                && beacon.mac_addr?.toLowerCase() === highlightMac;
+              return (
+                <div key={beacon.mac_addr} ref={isHighlighted ? highlightRef : undefined}>
+                  <BeaconCard
+                    beacon={beacon}
+                    isAdmin={isAdmin}
+                    onEdit={setEditingBeacon}
+                    highlighted={isHighlighted}
+                  />
+                </div>
+              );
+            })
           )}
         </div>
       </div>

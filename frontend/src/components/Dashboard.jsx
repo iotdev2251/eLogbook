@@ -1,4 +1,5 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useBeacons } from '../hooks/useBeacons';
 import { useSettings } from '../context/SettingsContext';
 import { beaconDisplayName, gatewayDisplayName } from '../utils/beaconDisplay';
@@ -41,7 +42,7 @@ function barFillForLevel(level) {
 }
 
 /** X = beacon name, Y = temperature (°C) */
-function TemperatureBarChart({ data, thresholds }) {
+function TemperatureBarChart({ data, thresholds, onBeaconClick }) {
   if (data.length === 0) {
     return (
       <div className="h-full flex items-center justify-center text-muted">
@@ -122,6 +123,16 @@ function TemperatureBarChart({ data, thresholds }) {
                 rx="3"
                 fill={barFillForLevel(level)}
                 opacity="0.9"
+                className={onBeaconClick ? 'cursor-pointer' : undefined}
+                role={onBeaconClick ? 'button' : undefined}
+                tabIndex={onBeaconClick ? 0 : undefined}
+                onClick={() => onBeaconClick?.(d.mac)}
+                onKeyDown={(e) => {
+                  if (onBeaconClick && (e.key === 'Enter' || e.key === ' ')) {
+                    e.preventDefault();
+                    onBeaconClick(d.mac);
+                  }
+                }}
               />
               <text x={cx} y={barTop - 6} textAnchor="middle" fontSize="11" fill="currentColor" opacity="0.85">
                 {d.temp}°C
@@ -194,7 +205,7 @@ function beaconShade(baseHex, index, total) {
 /**
  * Dual-ring pie: inner = gateway, outer = beacons per gateway
  */
-function GatewayBeaconPieChart({ groups }) {
+function GatewayBeaconPieChart({ groups, onBeaconClick }) {
   const total = groups.reduce((sum, g) => sum + g.beacons.length, 0);
 
   if (total === 0) {
@@ -235,6 +246,7 @@ function GatewayBeaconPieChart({ groups }) {
       const bEnd = bStart + beaconSweep;
       beaconArcs.push({
         key: beacon.mac,
+        mac: beacon.mac,
         path: describeDonutSegment(cx, cy, rOuter, rMid + 2, bStart, bEnd),
         color: beaconShade(gatewayColor, bi, group.beacons.length),
         name: beacon.name,
@@ -250,7 +262,24 @@ function GatewayBeaconPieChart({ groups }) {
       <svg viewBox="0 0 260 260" className="w-[220px] h-[220px] shrink-0" role="img" aria-label="Gateway and beacon pie chart">
         <circle cx={cx} cy={cy} r={rOuter + 4} fill="none" stroke="currentColor" strokeOpacity="0.08" />
         {beaconArcs.map((a) => (
-          <path key={a.key} d={a.path} fill={a.color} stroke="#fff" strokeWidth="0.6" opacity="0.95">
+          <path
+            key={a.key}
+            d={a.path}
+            fill={a.color}
+            stroke="#fff"
+            strokeWidth="0.6"
+            opacity="0.95"
+            className={onBeaconClick ? 'cursor-pointer' : undefined}
+            role={onBeaconClick ? 'button' : undefined}
+            tabIndex={onBeaconClick ? 0 : undefined}
+            onClick={() => onBeaconClick?.(a.mac)}
+            onKeyDown={(e) => {
+              if (onBeaconClick && (e.key === 'Enter' || e.key === ' ')) {
+                e.preventDefault();
+                onBeaconClick(a.mac);
+              }
+            }}
+          >
             <title>{`${a.name} · ${a.location}`}</title>
           </path>
         ))}
@@ -266,14 +295,33 @@ function GatewayBeaconPieChart({ groups }) {
       <ul className="flex-1 space-y-3 text-sm min-w-0 max-h-[280px] overflow-y-auto">
         {groups.map((g, gi) => (
           <li key={g.location}>
-            <div className="flex items-center gap-2 mb-1">
-              <span className="w-3 h-3 rounded-sm shrink-0" style={{ backgroundColor: GATEWAY_COLORS[gi % GATEWAY_COLORS.length] }} />
-              <span className="truncate font-medium" title={g.location}>{g.location}</span>
-              <span className="text-muted shrink-0">{g.beacons.length}</span>
+            <div className="flex items-start gap-2 mb-1">
+              <span className="w-3 h-3 rounded-sm shrink-0 mt-1" style={{ backgroundColor: GATEWAY_COLORS[gi % GATEWAY_COLORS.length] }} />
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-2">
+                  <span className="font-medium break-words" title={g.location}>{g.location}</span>
+                  <span className="text-muted shrink-0">{g.beacons.length}</span>
+                </div>
+                <ul className="mt-1 pl-0 space-y-0.5">
+                  {g.beacons.map((b) => (
+                    <li key={b.mac}>
+                      {onBeaconClick ? (
+                        <button
+                          type="button"
+                          onClick={() => onBeaconClick(b.mac)}
+                          className="text-xs text-muted hover:text-accent-cyan text-left break-words w-full"
+                          title={`${b.name} (${b.mac})`}
+                        >
+                          {b.name}
+                        </button>
+                      ) : (
+                        <span className="text-xs text-muted break-words" title={b.name}>{b.name}</span>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              </div>
             </div>
-            <p className="text-xs text-muted pl-5 truncate" title={g.beacons.map((b) => b.name).join(', ')}>
-              {g.beacons.map((b) => b.name).join(', ')}
-            </p>
           </li>
         ))}
       </ul>
@@ -281,7 +329,7 @@ function GatewayBeaconPieChart({ groups }) {
   );
 }
 
-function LocationBeaconStripChart({ groups }) {
+function LocationBeaconStripChart({ groups, onBeaconClick }) {
   if (groups.length === 0) {
     return (
       <div className="h-full flex items-center justify-center text-muted">
@@ -332,6 +380,16 @@ function LocationBeaconStripChart({ groups }) {
                       rx="5"
                       fill={color}
                       opacity="0.88"
+                      className={onBeaconClick ? 'cursor-pointer' : undefined}
+                      role={onBeaconClick ? 'button' : undefined}
+                      tabIndex={onBeaconClick ? 0 : undefined}
+                      onClick={() => onBeaconClick?.(beacon.mac)}
+                      onKeyDown={(e) => {
+                        if (onBeaconClick && (e.key === 'Enter' || e.key === ' ')) {
+                          e.preventDefault();
+                          onBeaconClick(beacon.mac);
+                        }
+                      }}
                     />
                     <text
                       x={barLeft + i * segW + segW / 2}
@@ -401,8 +459,14 @@ function DashboardKpi({ icon, label, value, subValue, tone }) {
 }
 
 export const Dashboard = () => {
+  const navigate = useNavigate();
   const { beaconList, isConnected } = useBeacons();
   const { config } = useSettings();
+
+  const goToBeacon = useCallback((mac) => {
+    if (!mac) return;
+    navigate(`/real-time?mac=${encodeURIComponent(mac)}`);
+  }, [navigate]);
 
   const stats = useMemo(() => {
     const active = beaconList.filter((b) => b.status === 'in').length;
@@ -472,7 +536,7 @@ export const Dashboard = () => {
           <h3 className="text-lg font-bold mb-1">Temperature Overview</h3>
           <p className="text-xs text-muted mb-4">Current temperature per beacon (°C)</p>
           <div className="h-[380px]">
-            <TemperatureBarChart data={chartData} thresholds={config} />
+            <TemperatureBarChart data={chartData} thresholds={config} onBeaconClick={goToBeacon} />
           </div>
         </div>
 
@@ -480,7 +544,7 @@ export const Dashboard = () => {
           <h3 className="text-lg font-bold mb-1">Location Distribution</h3>
           <p className="text-xs text-muted mb-4">Beacon count per gateway</p>
           <div className="h-[320px]">
-            <GatewayBeaconPieChart groups={locationGroups} />
+            <GatewayBeaconPieChart groups={locationGroups} onBeaconClick={goToBeacon} />
           </div>
         </div>
 
@@ -488,7 +552,7 @@ export const Dashboard = () => {
           <h3 className="text-lg font-bold mb-1">Location Assignment</h3>
           <p className="text-xs text-muted mb-4">Beacons grouped by gateway</p>
           <div className="min-h-[200px] py-2">
-            <LocationBeaconStripChart groups={locationGroups} />
+            <LocationBeaconStripChart groups={locationGroups} onBeaconClick={goToBeacon} />
           </div>
         </div>
       </div>
