@@ -6,6 +6,7 @@ import { RealTimeStatus } from './components/RealTimeStatus';
 import { Login } from './components/Login';
 import { Settings } from './components/Settings';
 import { Alerts } from './components/Alerts';
+import { ConnectionBanner } from './components/ConnectionBanner';
 import { UserAvatar } from './components/UserAvatar';
 import { BeaconProvider } from './context/BeaconContext';
 import { SettingsProvider, useSettings } from './context/SettingsContext';
@@ -163,6 +164,8 @@ function AppContent() {
                 {now.toLocaleTimeString()}
               </div>
             </header>
+
+            <ConnectionBanner />
 
             <main className="flex-1 overflow-y-auto bg-background pb-20 md:pb-0">
               <Routes>

@@ -1,6 +1,18 @@
 import React, { useMemo } from 'react';
 import { useBeacons } from '../hooks/useBeacons';
+import { useSettings } from '../context/SettingsContext';
 import { beaconDisplayName, gatewayDisplayName } from '../utils/beaconDisplay';
+import {
+  countTempAlerts,
+  getTempAlertLevel,
+  parseBeaconTempC,
+} from '../utils/tempAlerts';
+import {
+  AlertCircle,
+  CheckCircle2,
+  Radio,
+  Thermometer,
+} from 'lucide-react';
 
 const chartMinTemp = 10;
 const chartMaxTemp = 45;
@@ -22,8 +34,14 @@ function tempToPlotY(t, topPad, plotHeight) {
   return topPad + plotHeight - ((clamped - chartMinTemp) / (chartMaxTemp - chartMinTemp)) * plotHeight;
 }
 
+function barFillForLevel(level) {
+  if (level === 'critical') return '#dc2626';
+  if (level === 'warn') return '#ea580c';
+  return '#00b8d4';
+}
+
 /** X = Beacon 名稱，Y = 溫度 (°C) */
-function TemperatureBarChart({ data }) {
+function TemperatureBarChart({ data, thresholds }) {
   if (data.length === 0) {
     return (
       <div className="h-full flex items-center justify-center text-muted">
@@ -44,10 +62,37 @@ function TemperatureBarChart({ data }) {
   const slotWidth = plotWidth / data.length;
   const barWidth = Math.min(48, slotWidth * 0.65);
   const gridTemps = [10, 15, 20, 25, 30, 35, 40, 45];
+  const warnC = thresholds?.tempWarnC ?? 32;
+  const criticalC = thresholds?.tempCriticalC ?? 36;
+  const thresholdLines = [
+    { temp: warnC, color: '#ea580c', label: `警示 ${warnC}°C` },
+    { temp: criticalC, color: '#dc2626', label: `嚴重 ${criticalC}°C` },
+  ].filter((line) => line.temp >= chartMinTemp && line.temp <= chartMaxTemp);
 
   return (
     <div className="w-full overflow-x-auto">
       <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-[360px]" style={{ minWidth: `${Math.min(width, 1200)}px` }}>
+        {thresholdLines.map((line) => {
+          const y = tempToPlotY(line.temp, topPad, plotHeight);
+          return (
+            <g key={line.label}>
+              <line
+                x1={leftPad}
+                y1={y}
+                x2={width - rightPad}
+                y2={y}
+                stroke={line.color}
+                strokeWidth="1.5"
+                strokeDasharray="6 4"
+                opacity="0.85"
+              />
+              <text x={width - rightPad + 4} y={y + 4} fontSize="9" fill={line.color}>
+                {line.label}
+              </text>
+            </g>
+          );
+        })}
+
         {gridTemps.map((t) => {
           const y = tempToPlotY(t, topPad, plotHeight);
           return (
@@ -66,6 +111,7 @@ function TemperatureBarChart({ data }) {
           const barX = cx - barWidth / 2;
           const barTop = tempToPlotY(d.temp, topPad, plotHeight);
           const barH = baseline - barTop;
+          const level = getTempAlertLevel(d.temp, thresholds);
           return (
             <g key={d.mac}>
               <rect
@@ -74,7 +120,7 @@ function TemperatureBarChart({ data }) {
                 width={barWidth}
                 height={Math.max(barH, 2)}
                 rx="3"
-                fill="#00b8d4"
+                fill={barFillForLevel(level)}
                 opacity="0.9"
               />
               <text x={cx} y={barTop - 6} textAnchor="middle" fontSize="11" fill="currentColor" opacity="0.85">
@@ -331,8 +377,48 @@ function groupBeaconsByLocation(beaconList) {
     .sort((a, b) => a.location.localeCompare(b.location, undefined, { sensitivity: 'base', numeric: true }));
 }
 
+function DashboardKpi({ icon, label, value, subValue, tone }) {
+  const toneClass = tone === 'danger'
+    ? 'text-danger'
+    : tone === 'warn'
+      ? 'text-warning'
+      : tone === 'success'
+        ? 'text-success'
+        : 'text-foreground';
+
+  return (
+    <div className="glass-panel p-4 md:p-5 flex items-center gap-4">
+      <div className="p-2.5 rounded-xl bg-slate-100 dark:bg-white/5 shrink-0">
+        {icon}
+      </div>
+      <div className="min-w-0">
+        <p className="text-xs text-muted uppercase tracking-widest">{label}</p>
+        <p className={`text-2xl font-bold truncate ${toneClass}`}>{value}</p>
+        {subValue && <p className="text-[10px] text-muted truncate">{subValue}</p>}
+      </div>
+    </div>
+  );
+}
+
 export const Dashboard = () => {
   const { beaconList, isConnected } = useBeacons();
+  const { config } = useSettings();
+
+  const stats = useMemo(() => {
+    const active = beaconList.filter((b) => b.status === 'in').length;
+    const offline = beaconList.filter((b) => b.status !== 'in').length;
+    const tempAlerts = countTempAlerts(beaconList, config);
+    let maxBeacon = null;
+    let maxTemp = null;
+    beaconList.forEach((b) => {
+      const t = parseBeaconTempC(b.temp);
+      if (t != null && (maxTemp == null || t > maxTemp)) {
+        maxTemp = t;
+        maxBeacon = b;
+      }
+    });
+    return { active, offline, tempAlerts, maxTemp, maxBeacon };
+  }, [beaconList, config]);
 
   const chartData = useMemo(() => (
     beaconList
@@ -354,12 +440,39 @@ export const Dashboard = () => {
         </p>
       </div>
 
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <DashboardKpi
+          icon={<Radio className="text-accent-cyan" size={22} />}
+          label="Beacon 總數"
+          value={beaconList.length}
+        />
+        <DashboardKpi
+          icon={<CheckCircle2 className="text-success" size={22} />}
+          label="在線"
+          value={stats.active}
+          tone="success"
+        />
+        <DashboardKpi
+          icon={<AlertCircle className="text-danger" size={22} />}
+          label="溫度警示"
+          value={stats.tempAlerts}
+          tone={stats.tempAlerts > 0 ? 'danger' : undefined}
+        />
+        <DashboardKpi
+          icon={<Thermometer className="text-warning" size={22} />}
+          label="最高溫度"
+          value={stats.maxTemp != null ? `${stats.maxTemp}°C` : '—'}
+          subValue={stats.maxBeacon ? beaconDisplayName(stats.maxBeacon) : undefined}
+          tone={stats.maxTemp != null && getTempAlertLevel(stats.maxTemp, config) !== 'none' ? 'warn' : undefined}
+        />
+      </div>
+
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="glass-panel p-4 md:p-6 lg:col-span-2">
           <h3 className="text-lg font-bold mb-1">溫度總覽</h3>
           <p className="text-xs text-muted mb-4">各 Beacon 目前溫度（°C）</p>
           <div className="h-[380px]">
-            <TemperatureBarChart data={chartData} />
+            <TemperatureBarChart data={chartData} thresholds={config} />
           </div>
         </div>
 

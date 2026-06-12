@@ -1,6 +1,7 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useBeacons } from '../hooks/useBeacons';
 import { BeaconCard } from './BeaconCard';
+import { BeaconEditModal } from './BeaconEditModal';
 import { AlertTriangle, Thermometer } from 'lucide-react';
 import { useSettings } from '../context/SettingsContext';
 import {
@@ -9,8 +10,9 @@ import {
 } from '../utils/tempAlerts';
 
 export const Alerts = ({ currentUser }) => {
-  const { beaconList, isConnected } = useBeacons();
+  const { beaconList, isConnected, mergeBeaconUpdates } = useBeacons();
   const { config } = useSettings();
+  const [editingBeacon, setEditingBeacon] = useState(null);
   const isAdmin = currentUser?.role === 'admin';
   const { tempWarnC, tempCriticalC } = config;
 
@@ -34,16 +36,16 @@ export const Alerts = ({ currentUser }) => {
       <div className="flex items-center justify-between gap-4">
         <div>
           <h2 className="text-2xl font-bold font-display flex items-center gap-2">
-            <AlertTriangle className="text-red-500" size={28} />
-            Temperature Alerts
+            <AlertTriangle className="text-danger" size={28} />
+            溫度警示
           </h2>
           <p className="text-sm text-muted mt-1">
             Beacon 溫度 &gt; {tempWarnC}°C 列入警示；&gt; {tempCriticalC}°C 為嚴重高溫
           </p>
         </div>
         <div className="text-sm text-muted shrink-0">
-          {alertBeacons.length} alert{alertBeacons.length !== 1 ? 's' : ''} ·{' '}
-          {isConnected ? 'Socket Connected · 實時更新' : 'Socket Disconnected'}
+          {alertBeacons.length} 則警示 ·{' '}
+          {isConnected ? '即時更新' : '連線中斷'}
         </div>
       </div>
 
@@ -62,6 +64,7 @@ export const Alerts = ({ currentUser }) => {
               tone="critical"
               beacons={critical}
               isAdmin={isAdmin}
+              onEdit={setEditingBeacon}
             />
           )}
           {warn.length > 0 && (
@@ -71,19 +74,27 @@ export const Alerts = ({ currentUser }) => {
               tone="warn"
               beacons={warn}
               isAdmin={isAdmin}
+              onEdit={setEditingBeacon}
             />
           )}
         </div>
       )}
+
+      <BeaconEditModal
+        beacon={editingBeacon}
+        open={editingBeacon != null}
+        onClose={() => setEditingBeacon(null)}
+        onSaved={mergeBeaconUpdates}
+      />
     </div>
   );
 };
 
-function AlertSection({ title, count, tone, beacons, isAdmin }) {
+function AlertSection({ title, count, tone, beacons, isAdmin, onEdit }) {
   const headerClass =
     tone === 'critical'
-      ? 'text-red-700 dark:text-red-400'
-      : 'text-orange-600 dark:text-orange-400';
+      ? 'text-danger'
+      : 'text-warning';
 
   return (
     <section>
@@ -92,7 +103,12 @@ function AlertSection({ title, count, tone, beacons, isAdmin }) {
       </h3>
       <div className="flex flex-col gap-4">
         {beacons.map((beacon) => (
-          <BeaconCard key={beacon.mac_addr} beacon={beacon} isAdmin={isAdmin} />
+          <BeaconCard
+            key={beacon.mac_addr}
+            beacon={beacon}
+            isAdmin={isAdmin}
+            onEdit={onEdit}
+          />
         ))}
       </div>
     </section>

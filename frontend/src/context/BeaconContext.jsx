@@ -7,7 +7,7 @@ import React, {
   useRef,
   useState,
 } from 'react';
-import axios from 'axios';
+import axios from '../api/axiosSetup';
 import { useSocket } from '../hooks/useSocket';
 import { beaconDisplayName } from '../utils/beaconDisplay';
 import { mergeBeaconRecord } from '../utils/mergeBeacon';
@@ -17,8 +17,9 @@ const BeaconContext = createContext(null);
 export function BeaconProvider({ children }) {
   const [beacons, setBeacons] = useState({});
   const [updatesPerMin, setUpdatesPerMin] = useState(0);
+  const [loadError, setLoadError] = useState('');
   const updateTimestamps = useRef([]);
-  const { socket, isConnected } = useSocket('/');
+  const { socket, isConnected, reconnect } = useSocket('/');
 
   const recordSocketActivity = useCallback(() => {
     const now = Date.now();
@@ -40,17 +41,23 @@ export function BeaconProvider({ children }) {
     });
   }, [recordSocketActivity]);
 
-  useEffect(() => {
-    axios.get('/beacons')
-      .then((res) => {
-        const beaconMap = {};
-        res.data.forEach((b) => {
-          if (b?.mac_addr) beaconMap[b.mac_addr] = b;
-        });
-        setBeacons(beaconMap);
-      })
-      .catch(() => {});
+  const refreshBeacons = useCallback(async () => {
+    try {
+      const res = await axios.get('/beacons');
+      const beaconMap = {};
+      res.data.forEach((b) => {
+        if (b?.mac_addr) beaconMap[b.mac_addr] = b;
+      });
+      setBeacons(beaconMap);
+      setLoadError('');
+    } catch {
+      setLoadError('無法載入 Beacon 資料');
+    }
   }, []);
+
+  useEffect(() => {
+    refreshBeacons();
+  }, [refreshBeacons]);
 
   useEffect(() => {
     if (!socket) return undefined;
@@ -77,8 +84,20 @@ export function BeaconProvider({ children }) {
     beaconList,
     isConnected,
     updatesPerMin,
+    loadError,
     mergeBeaconUpdates,
-  }), [beacons, beaconList, isConnected, updatesPerMin, mergeBeaconUpdates]);
+    refreshBeacons,
+    reconnect,
+  }), [
+    beacons,
+    beaconList,
+    isConnected,
+    updatesPerMin,
+    loadError,
+    mergeBeaconUpdates,
+    refreshBeacons,
+    reconnect,
+  ]);
 
   return (
     <BeaconContext.Provider value={value}>

@@ -1,88 +1,136 @@
 import React, { useState, useMemo } from 'react';
 import { useBeacons } from '../hooks/useBeacons';
+import { useSettings } from '../context/SettingsContext';
 import { BeaconCard } from './BeaconCard';
 import { BeaconEditModal } from './BeaconEditModal';
 import { Activity, Radio, AlertCircle, CheckCircle2, Search } from 'lucide-react';
 import { beaconMatchesSearch } from '../utils/beaconSearch';
 import { countTempAlerts } from '../utils/tempAlerts';
-import { useSettings } from '../context/SettingsContext';
+import {
+  SORT_OPTIONS,
+  STATUS_FILTER_OPTIONS,
+  filterBeacons,
+  sortBeacons,
+} from '../utils/sortBeacons';
 
 export const RealTimeStatus = ({ currentUser }) => {
   const [searchQuery, setSearchQuery] = useState('');
+  const [sortBy, setSortBy] = useState('name');
+  const [sortDir, setSortDir] = useState('asc');
+  const [statusFilter, setStatusFilter] = useState('all');
   const [editingBeacon, setEditingBeacon] = useState(null);
   const { beacons, beaconList: allSorted, isConnected, updatesPerMin, mergeBeaconUpdates } = useBeacons();
   const { config } = useSettings();
   const isAdmin = currentUser?.role === 'admin';
 
-  const beaconList = useMemo(
-    () => allSorted.filter((beacon) => beaconMatchesSearch(beacon, searchQuery)),
-    [allSorted, searchQuery],
-  );
+  const beaconList = useMemo(() => {
+    const searched = allSorted.filter((beacon) => beaconMatchesSearch(beacon, searchQuery));
+    const filtered = filterBeacons(searched, { statusFilter, thresholds: config });
+    return sortBeacons(filtered, { sortBy, sortDir });
+  }, [allSorted, searchQuery, statusFilter, sortBy, sortDir, config]);
 
   const allBeacons = Object.values(beacons);
-  const activeCount = allBeacons.filter(b => b.status === 'in').length;
+  const activeCount = allBeacons.filter((b) => b.status === 'in').length;
   const alertCount = countTempAlerts(allBeacons, config);
 
   return (
     <div className="p-4 md:p-8 max-w-7xl mx-auto flex flex-col gap-8">
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
         <StatCard
           icon={<Radio className="text-accent-cyan" />}
-          label="Total Beacons"
+          label="Beacon 總數"
           value={allBeacons.length}
-          subValue={`${isConnected ? 'Connected' : 'Disconnected'} to Server`}
+          subValue={isConnected ? '即時連線中' : '連線中斷'}
         />
         <StatCard
-          icon={<CheckCircle2 className="text-green-600 dark:text-green-400" />}
-          label="Active"
+          icon={<CheckCircle2 className="text-success" />}
+          label="在線"
           value={activeCount}
         />
         <StatCard
-          icon={<AlertCircle className="text-red-600 dark:text-red-400" />}
-          label="Alerts"
+          icon={<AlertCircle className="text-danger" />}
+          label="溫度警示"
           value={alertCount}
         />
         <StatCard
           icon={<Activity className="text-accent-purple" />}
-          label="Recent Activity"
+          label="近期活動"
           value={updatesPerMin}
-          subValue="Updates/min"
+          subValue="次/分鐘"
         />
       </div>
 
       <div>
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
-          <div className="flex flex-col sm:flex-row sm:items-center gap-4 flex-1 min-w-0">
-            <h2 className="text-2xl font-bold font-display flex items-center gap-2 shrink-0">
-              Live Beacon Status
-              <span className="flex h-2 w-2 rounded-full bg-accent-cyan animate-ping"></span>
+        <div className="flex flex-col gap-4 mb-6">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <h2 className="text-xl font-bold font-display flex items-center gap-2 shrink-0">
+              即時 Beacon 狀態
+              <span
+                className={`flex h-2 w-2 rounded-full ${isConnected ? 'bg-accent-cyan animate-ping' : 'bg-muted'}`}
+                aria-hidden="true"
+              />
+              <span className="sr-only">{isConnected ? '即時連線中' : '連線中斷'}</span>
             </h2>
-            <div className="relative flex-1 max-w-md">
+            <div className="text-sm text-muted shrink-0">
+              {beaconList.length} / {allBeacons.length} · Socket.io 自動更新
+            </div>
+          </div>
+
+          <div className="flex flex-col lg:flex-row gap-3">
+            <div className="relative flex-1 min-w-0">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted w-4 h-4" aria-hidden="true" />
               <input
                 type="search"
                 value={searchQuery}
-                onChange={e => setSearchQuery(e.target.value)}
-                placeholder="Search name, MAC, gateway, temp, battery, RSSI, status..."
-                className="input-field pl-10 py-2.5 text-sm"
-                aria-label="Search all beacon fields"
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="搜尋名稱、MAC、Gateway、溫度…"
+                className="input-field pl-10 py-2.5 text-sm w-full"
+                aria-label="搜尋 Beacon"
               />
             </div>
-          </div>
-          <div className="text-sm text-muted shrink-0">
-            {beaconList.length} / {allBeacons.length} · Auto-refresh via Socket.io
+            <div className="flex flex-wrap gap-2">
+              <select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                className="input-field py-2.5 text-sm min-w-[7rem]"
+                aria-label="狀態篩選"
+              >
+                {STATUS_FILTER_OPTIONS.map((opt) => (
+                  <option key={opt.value} value={opt.value}>{opt.label}</option>
+                ))}
+              </select>
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value)}
+                className="input-field py-2.5 text-sm min-w-[7rem]"
+                aria-label="排序欄位"
+              >
+                {SORT_OPTIONS.map((opt) => (
+                  <option key={opt.value} value={opt.value}>{opt.label}</option>
+                ))}
+              </select>
+              <select
+                value={sortDir}
+                onChange={(e) => setSortDir(e.target.value)}
+                className="input-field py-2.5 text-sm min-w-[6rem]"
+                aria-label="排序方向"
+              >
+                <option value="asc">升序</option>
+                <option value="desc">降序</option>
+              </select>
+            </div>
           </div>
         </div>
 
         <div className="flex flex-col gap-4">
           {beaconList.length === 0 ? (
             <div className="glass-panel p-8 text-center text-muted">
-              {searchQuery.trim()
-                ? 'No beacons match your search.'
-                : 'No beacons connected.'}
+              {searchQuery.trim() || statusFilter !== 'all'
+                ? '沒有符合條件的 Beacon。'
+                : '目前沒有 Beacon 資料。'}
             </div>
           ) : (
-            beaconList.map(beacon => (
+            beaconList.map((beacon) => (
               <BeaconCard
                 key={beacon.mac_addr}
                 beacon={beacon}
@@ -105,7 +153,7 @@ export const RealTimeStatus = ({ currentUser }) => {
 };
 
 const StatCard = ({ icon, label, value, subValue }) => (
-  <div className="glass-panel p-6 flex items-center gap-4">
+  <div className="glass-panel p-4 md:p-6 flex items-center gap-4">
     <div className="p-3 rounded-xl bg-slate-100 dark:bg-white/5">
       {icon}
     </div>
