@@ -9,6 +9,13 @@ import {
   KeyRound,
   Thermometer,
   SlidersHorizontal,
+  Router,
+  Activity,
+  Database,
+  RefreshCw,
+  Pencil,
+  X,
+  Check,
 } from 'lucide-react';
 
 const PARAM_FIELDS = [
@@ -34,6 +41,8 @@ export const Settings = ({ currentUser }) => {
 
       {isAdmin && (
         <>
+          <SystemStatusSection />
+          <GatewayManagementSection />
           <SystemParamsSection onSaved={refreshConfig} />
           <UserManagementSection currentUser={currentUser} />
         </>
@@ -107,6 +116,372 @@ function ChangePasswordSection() {
           </button>
         </div>
       </form>
+    </section>
+  );
+}
+
+function formatUptime(seconds) {
+  const h = Math.floor(seconds / 3600);
+  const m = Math.floor((seconds % 3600) / 60);
+  const s = seconds % 60;
+  if (h > 0) return `${h}h ${m}m`;
+  if (m > 0) return `${m}m ${s}s`;
+  return `${s}s`;
+}
+
+function statusTone(status) {
+  if (status === 'ok' || status === 'connected') {
+    return 'text-green-700 dark:text-green-400 bg-green-50 dark:bg-green-500/10 border-green-300 dark:border-green-500/20';
+  }
+  if (status === 'reconnecting' || status === 'offline') {
+    return 'text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-500/10 border-orange-300 dark:border-orange-500/20';
+  }
+  return 'text-red-700 dark:text-red-400 bg-red-50 dark:bg-red-500/10 border-red-300 dark:border-red-500/20';
+}
+
+function SystemStatusSection() {
+  const [status, setStatus] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  const fetchStatus = async () => {
+    try {
+      const res = await axios.get('/settings/status');
+      setStatus(res.data);
+      setError('');
+    } catch (err) {
+      setError(err.response?.data?.msg || 'Failed to load system status');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchStatus();
+    const id = setInterval(fetchStatus, 30000);
+    return () => clearInterval(id);
+  }, []);
+
+  return (
+    <section className="glass-panel p-6">
+      <div className="flex items-center justify-between gap-4 mb-6">
+        <div>
+          <h3 className="text-lg font-bold flex items-center gap-2">
+            <Activity className="text-accent-cyan" size={20} />
+            System Status
+          </h3>
+          <p className="text-sm text-muted mt-1">MQTT, database, and runtime health.</p>
+        </div>
+        <button
+          type="button"
+          onClick={fetchStatus}
+          className="flex items-center gap-2 px-3 py-2 text-sm rounded-lg border border-border hover:bg-[var(--color-panel-hover)] transition-all"
+        >
+          <RefreshCw size={16} />
+          Refresh
+        </button>
+      </div>
+
+      {error && (
+        <div className="mb-4 text-red-700 dark:text-red-400 bg-red-50 dark:bg-red-500/10 p-3 rounded-xl border border-red-300 dark:border-red-500/20">
+          {error}
+        </div>
+      )}
+
+      {loading && !status ? (
+        <p className="text-muted">Loading status…</p>
+      ) : status && (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <StatusCard
+            label="Application"
+            value={status.app?.name || 'TempTrack'}
+            subValue={`v${status.app?.version || '0.0.0'}`}
+          />
+          <StatusCard
+            label="Uptime"
+            value={formatUptime(status.uptime_seconds || 0)}
+            subValue={status.server_time ? new Date(status.server_time).toLocaleString() : '—'}
+          />
+          <StatusCard
+            label="Database"
+            value={status.database?.status === 'ok' ? 'Connected' : 'Error'}
+            subValue={status.database?.message || 'PostgreSQL'}
+            tone={status.database?.status}
+          />
+          <StatusCard
+            label="MQTT Broker"
+            value={status.mqtt?.status || 'unknown'}
+            subValue={`${status.mqtt?.host || '—'}:${status.mqtt?.port || '—'} · ${status.mqtt?.subscribedTopics || 0} topics`}
+            tone={status.mqtt?.connected ? 'connected' : status.mqtt?.status}
+          />
+          <StatusCard
+            label="Gateways"
+            value={String(status.counts?.gateways ?? 0)}
+            subValue={`${status.counts?.in_memory_gateways ?? 0} loaded in memory`}
+          />
+          <StatusCard
+            label="Beacons"
+            value={String(status.counts?.beacons ?? 0)}
+            subValue="Registered in database"
+          />
+        </div>
+      )}
+    </section>
+  );
+}
+
+function StatusCard({ label, value, subValue, tone }) {
+  const toneClass = tone ? statusTone(tone) : 'bg-slate-50 dark:bg-black/20 border-border';
+  return (
+    <div className={`border rounded-xl p-4 ${tone ? toneClass : 'bg-slate-50 dark:bg-black/20 border-border'}`}>
+      <p className="text-xs text-muted uppercase tracking-wider mb-2">{label}</p>
+      <p className="text-lg font-bold capitalize">{value}</p>
+      {subValue && <p className="text-xs text-muted mt-1 break-all">{subValue}</p>}
+    </div>
+  );
+}
+
+function GatewayManagementSection() {
+  const [gateways, setGateways] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [message, setMessage] = useState('');
+  const [editingId, setEditingId] = useState(null);
+  const [editForm, setEditForm] = useState({ name: '', mac_addr: '', check_point: false });
+  const [newGateway, setNewGateway] = useState({
+    id: '',
+    name: '',
+    mac_addr: '',
+    check_point: false,
+  });
+
+  const fetchGateways = async () => {
+    try {
+      const res = await axios.get('/settings/gateways');
+      setGateways(res.data);
+      setError('');
+    } catch (err) {
+      setError(err.response?.data?.msg || 'Failed to load gateways');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchGateways();
+  }, []);
+
+  const handleCreate = async (e) => {
+    e.preventDefault();
+    setMessage('');
+    setError('');
+    try {
+      await axios.post('/settings/gateways', newGateway);
+      setNewGateway({ id: '', name: '', mac_addr: '', check_point: false });
+      setMessage('Gateway created. MQTT subscription updated.');
+      fetchGateways();
+    } catch (err) {
+      setError(err.response?.data?.msg || 'Failed to create gateway');
+    }
+  };
+
+  const startEdit = (gateway) => {
+    setEditingId(gateway.id);
+    setEditForm({
+      name: gateway.name,
+      mac_addr: gateway.mac_addr,
+      check_point: gateway.check_point,
+    });
+  };
+
+  const cancelEdit = () => {
+    setEditingId(null);
+    setEditForm({ name: '', mac_addr: '', check_point: false });
+  };
+
+  const saveEdit = async (id) => {
+    setMessage('');
+    setError('');
+    try {
+      await axios.patch(`/settings/gateways/${encodeURIComponent(id)}`, editForm);
+      setMessage('Gateway updated.');
+      cancelEdit();
+      fetchGateways();
+    } catch (err) {
+      setError(err.response?.data?.msg || 'Failed to update gateway');
+    }
+  };
+
+  const handleDelete = async (gateway) => {
+    if (!window.confirm(`Delete gateway "${gateway.name}"?`)) return;
+    setMessage('');
+    setError('');
+    try {
+      await axios.delete(`/settings/gateways/${encodeURIComponent(gateway.id)}`);
+      setMessage('Gateway deleted.');
+      fetchGateways();
+    } catch (err) {
+      setError(err.response?.data?.msg || 'Failed to delete gateway');
+    }
+  };
+
+  return (
+    <section>
+      <div className="mb-6">
+        <h3 className="text-lg font-bold flex items-center gap-2">
+          <Router className="text-accent-purple" size={20} />
+          Gateway Management
+        </h3>
+        <p className="text-sm text-muted mt-1">Manage MQTT gateway locations and check points.</p>
+      </div>
+
+      {message && (
+        <div className="mb-4 text-green-700 dark:text-green-400 bg-green-50 dark:bg-green-500/10 p-3 rounded-xl border border-green-300 dark:border-green-500/20">
+          {message}
+        </div>
+      )}
+      {error && (
+        <div className="mb-4 text-red-700 dark:text-red-400 bg-red-50 dark:bg-red-500/10 p-3 rounded-xl border border-red-300 dark:border-red-500/20">
+          {error}
+        </div>
+      )}
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="glass-panel p-6 h-fit">
+          <h4 className="text-base font-bold mb-6">Add Gateway</h4>
+          <form onSubmit={handleCreate} className="flex flex-col gap-4">
+            <Field
+              label="Gateway ID"
+              value={newGateway.id}
+              onChange={(v) => setNewGateway((prev) => ({ ...prev, id: v }))}
+              required
+            />
+            <Field
+              label="Display name"
+              value={newGateway.name}
+              onChange={(v) => setNewGateway((prev) => ({ ...prev, name: v }))}
+              required
+            />
+            <Field
+              label="MAC address"
+              value={newGateway.mac_addr}
+              onChange={(v) => setNewGateway((prev) => ({ ...prev, mac_addr: v }))}
+              required
+            />
+            <label className="flex items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                checked={newGateway.check_point}
+                onChange={(e) => setNewGateway((prev) => ({ ...prev, check_point: e.target.checked }))}
+                className="rounded border-border"
+              />
+              Check point (OUT when offline)
+            </label>
+            <button
+              type="submit"
+              className="mt-2 bg-slate-100 dark:bg-white/10 hover:bg-cyan-100 dark:hover:bg-accent-cyan/20 hover:text-cyan-800 dark:hover:text-accent-cyan text-foreground font-medium py-2 rounded-lg transition-all"
+            >
+              Add Gateway
+            </button>
+          </form>
+        </div>
+
+        <div className="lg:col-span-2 glass-panel p-6">
+          <h4 className="text-base font-bold mb-6 flex items-center gap-2">
+            <Database size={18} className="text-muted" />
+            Registered Gateways
+          </h4>
+          {loading ? (
+            <p className="text-muted">Loading gateways…</p>
+          ) : gateways.length === 0 ? (
+            <p className="text-muted">No gateways configured.</p>
+          ) : (
+            <div className="flex flex-col gap-3">
+              {gateways.map((gateway) => (
+                <div
+                  key={gateway.id}
+                  className="bg-slate-50 dark:bg-black/20 border border-border p-4 rounded-xl"
+                >
+                  {editingId === gateway.id ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      <Field
+                        label="Display name"
+                        value={editForm.name}
+                        onChange={(v) => setEditForm((prev) => ({ ...prev, name: v }))}
+                        required
+                      />
+                      <Field
+                        label="MAC address"
+                        value={editForm.mac_addr}
+                        onChange={(v) => setEditForm((prev) => ({ ...prev, mac_addr: v }))}
+                        required
+                      />
+                      <label className="flex items-center gap-2 text-sm md:col-span-2">
+                        <input
+                          type="checkbox"
+                          checked={editForm.check_point}
+                          onChange={(e) => setEditForm((prev) => ({ ...prev, check_point: e.target.checked }))}
+                          className="rounded border-border"
+                        />
+                        Check point (OUT when offline)
+                      </label>
+                      <div className="md:col-span-2 flex gap-2">
+                        <button
+                          type="button"
+                          onClick={() => saveEdit(gateway.id)}
+                          className="flex items-center gap-2 px-3 py-2 text-sm rounded-lg bg-cyan-100 dark:bg-accent-cyan/20 text-cyan-800 dark:text-accent-cyan"
+                        >
+                          <Check size={16} />
+                          Save
+                        </button>
+                        <button
+                          type="button"
+                          onClick={cancelEdit}
+                          className="flex items-center gap-2 px-3 py-2 text-sm rounded-lg border border-border"
+                        >
+                          <X size={16} />
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex items-start justify-between gap-4">
+                      <div>
+                        <p className="font-bold">{gateway.name}</p>
+                        <p className="text-xs text-muted mt-1">ID: {gateway.id}</p>
+                        <p className="text-xs text-muted font-mono mt-1">MAC: {gateway.mac_addr}</p>
+                        <p className="text-xs text-muted mt-2">
+                          {gateway.beacon_count} beacon{gateway.beacon_count !== 1 ? 's' : ''} ·{' '}
+                          {gateway.check_point ? 'Check point' : 'Standard gateway'}
+                        </p>
+                      </div>
+                      <div className="flex gap-1 shrink-0">
+                        <button
+                          type="button"
+                          onClick={() => startEdit(gateway)}
+                          className="p-2 text-muted hover:text-foreground hover:bg-[var(--color-panel-hover)] rounded-lg"
+                          title="Edit gateway"
+                        >
+                          <Pencil size={16} />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleDelete(gateway)}
+                          disabled={gateway.beacon_count > 0}
+                          className="p-2 text-muted hover:text-red-600 dark:hover:text-red-400 hover:bg-red-500/10 rounded-lg disabled:opacity-40 disabled:cursor-not-allowed"
+                          title={gateway.beacon_count > 0 ? 'Remove beacons before deleting' : 'Delete gateway'}
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
     </section>
   );
 }

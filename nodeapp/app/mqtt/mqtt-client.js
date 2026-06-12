@@ -15,10 +15,54 @@ const GET_MQTT_TOPIC = (mac) => `/${mac}/connect_packet/adv_publish`
 class MyMqttClient{
     constructor(mqttProcessor){
         this._mqttProcessor = mqttProcessor
+        this._status = 'disconnected'
+        this._subscribedTopics = []
     }
     
     async init(){
         this.mqttClient = this._initMqtt()
+    }
+
+    getStatus() {
+        return {
+            status: this._status,
+            connected: Boolean(this.mqttClient?.connected),
+            host,
+            port: Number(port),
+            subscribedTopics: this._subscribedTopics.length,
+        }
+    }
+
+    subscribeGateway(mac) {
+        const topic = GET_MQTT_TOPIC(normalizeMac(mac))
+        if (!this.mqttClient || this._subscribedTopics.includes(topic)) {
+            return
+        }
+
+        this.mqttClient.subscribe(topic, (err) => {
+            if (err) {
+                logger.error('MQTT subscribe failed for %s: %s', topic, err.message)
+            } else {
+                this._subscribedTopics.push(topic)
+                logger.info('Subscribed to gateway topic %s', topic)
+            }
+        })
+    }
+
+    unsubscribeGateway(mac) {
+        const topic = GET_MQTT_TOPIC(normalizeMac(mac))
+        if (!this.mqttClient || !this._subscribedTopics.includes(topic)) {
+            return
+        }
+
+        this.mqttClient.unsubscribe(topic, (err) => {
+            if (err) {
+                logger.error('MQTT unsubscribe failed for %s: %s', topic, err.message)
+            } else {
+                this._subscribedTopics = this._subscribedTopics.filter((t) => t !== topic)
+                logger.info('Unsubscribed from gateway topic %s', topic)
+            }
+        })
     }
 
     _subscribeAll(client) {
@@ -29,6 +73,7 @@ class MyMqttClient{
 
         if (topics.length === 0) {
             logger.warn('No gateway topics to subscribe — check gateway table in database')
+            this._subscribedTopics = []
             return
         }
 
@@ -36,6 +81,7 @@ class MyMqttClient{
             if (err) {
                 logger.error('MQTT subscribe failed: %s', err.message)
             } else {
+                this._subscribedTopics = topics
                 logger.info('Subscribed to %d gateway topics', topics.length)
             }
         })
@@ -58,22 +104,31 @@ class MyMqttClient{
             logger.warn('MQTT_USER/MQTT_PASSWORD not set — connecting without credentials')
         }
 
+        this._status = 'connecting'
         const client = mqtt.connect(connectUrl, connectOptions)
 
         client.on('connect', () => {
+            that._status = 'connected'
             logger.info('MQTT broker connected (%s)', connectUrl)
             that._subscribeAll(client)
         })
 
         client.on('reconnect', () => {
+            that._status = 'reconnecting'
             logger.info('MQTT broker reconnecting...')
         })
 
         client.on('offline', () => {
+            that._status = 'offline'
             logger.warn('MQTT broker offline')
         })
 
+        client.on('close', () => {
+            that._status = 'disconnected'
+        })
+
         client.on('error', (err) => {
+            that._status = 'error'
             logger.error('MQTT client error: %s', err.message)
         })
 

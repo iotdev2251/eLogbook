@@ -11,6 +11,10 @@ class BeaconRepository {
         this._gateways = {}
     }
 
+    getDataStore() {
+        return this._beaconDataStore
+    }
+
     async init(beaconPrefix) {
         await this._initData()
         this.setBeaconPrefixes(beaconPrefix)
@@ -160,6 +164,34 @@ class BeaconRepository {
 
     getAllGateways() {
         return this._gateways
+    }
+
+    upsertGatewayInMemory(gateway) {
+        const normalized = {
+            ...gateway,
+            mac_addr: normalizeMac(gateway.mac_addr),
+        }
+        this._gateways[normalized.mac_addr] = normalized
+        return normalized
+    }
+
+    removeGatewayFromMemory(mac_addr) {
+        delete this._gateways[normalizeMac(mac_addr)]
+    }
+
+    syncBeaconGatewayMetadata(gateway) {
+        for (const beaconMacAddr in this._beacons) {
+            const beacon = this._beacons[beaconMacAddr]
+            if (beacon.gateway_id === gateway.id && beacon.gateway) {
+                beacon.gateway = {
+                    ...beacon.gateway,
+                    id: gateway.id,
+                    name: gateway.name,
+                    mac_addr: normalizeMac(gateway.mac_addr),
+                    check_point: gateway.check_point,
+                }
+            }
+        }
     }
 
     getExistingBeacon(mac_addr) {

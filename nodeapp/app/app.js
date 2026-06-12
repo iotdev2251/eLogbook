@@ -66,6 +66,7 @@ class MyApp {
         this._mqttClient = new MyMqttClient(this._mqttProcessor)
         this._paramRepository = null
         this._scheduleTask = null
+        this._startedAt = null
     }
 
     getApp(){
@@ -74,6 +75,7 @@ class MyApp {
 
     async init(io) {
         getJwtSecret()
+        this._startedAt = new Date()
 
         const paramRepository = new ParamRepository()
         await paramRepository.init()
@@ -94,12 +96,14 @@ class MyApp {
 
     _initRouter(app, paramRepository) {
         app.use('/auth', authRouter)
-        app.use('/settings', addSettingsRouter(
+        app.use('/settings', addSettingsRouter({
             paramRepository,
-            this._mqttProcessor,
-            this._beaconRepository,
-            this._scheduleTask,
-        ))
+            mqttProcessor: this._mqttProcessor,
+            beaconRepository: this._beaconRepository,
+            scheduleTask: this._scheduleTask,
+            mqttClient: this._mqttClient,
+            startedAt: this._startedAt,
+        }))
         app.use('/beacons', authMiddleware, addBeaconRouter(this._beaconRepository, this._mqttProcessor))
         app.use('/history', authMiddleware, addHistoryRouter())
 

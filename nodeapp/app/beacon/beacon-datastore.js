@@ -1,4 +1,5 @@
 import { loggerFactory } from '../../config/logger.js';
+import { normalizeMac } from './mac-utils.js';
 import pkg from '@prisma/client'
 
 const prisma = new pkg.PrismaClient()
@@ -98,6 +99,42 @@ class BeaconDataStore {
             throw e
             return []
         }
+    }
+
+    async getGatewayById(id) {
+        return prisma.gateway.findUnique({ where: { id } })
+    }
+
+    async getGatewayByMac(mac_addr) {
+        return prisma.gateway.findFirst({
+            where: { mac_addr: normalizeMac(mac_addr) },
+        })
+    }
+
+    async createGateway(data) {
+        return prisma.gateway.create({
+            data: {
+                id: data.id,
+                name: data.name,
+                mac_addr: normalizeMac(data.mac_addr),
+                check_point: data.check_point,
+            },
+        })
+    }
+
+    async updateGateway(id, data) {
+        return prisma.gateway.update({
+            where: { id },
+            data,
+        })
+    }
+
+    async deleteGateway(id) {
+        return prisma.gateway.delete({ where: { id } })
+    }
+
+    async countBeaconsForGateway(gatewayId) {
+        return prisma.beacon.count({ where: { gateway_id: gatewayId } })
     }
 }
 
